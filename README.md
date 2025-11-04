@@ -3,7 +3,6 @@
 <p align="center"><em>A framework-agnostic MongoDB admin library with intelligent relationship detection.</em></p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/last%20commit-december-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/python-100%25-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=flat-square" />
 </p>
