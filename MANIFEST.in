@@ -1,0 +1,28 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+
+# Documentation
+recursive-include docs *.md *.rst *.txt
+
+# Examples
+recursive-include examples *.py *.md *.txt *.toml *.json
+
+# Tests
+recursive-include tests *.py
+
+# UI package
+recursive-include mongoadmin_ui *.js *.css *.html *.json
+
+# Include package data
+recursive-include mongoadmin *.py
+recursive-include mongoadmin py.typed
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.swp
+global-exclude *.swo

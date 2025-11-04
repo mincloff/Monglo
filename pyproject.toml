@@ -1,0 +1,133 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "Monglo"
+version = "0.0.1"
+description = "A framework-agnostic MongoDB admin library with intelligent relationship detection and dual views"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Mehar Umar", email = "contact@meharumar.codes"},
+]
+maintainers = [
+    {name = "Mehar Umar", email = "contact@meharumar.codes"},
+]
+keywords = [
+    "mongodb",
+    "admin",
+    "fastapi",
+    "flask",
+    "django",
+    "motor",
+    "async",
+    "database",
+    "introspection",
+    "relationships",
+    "crud",
+    "schema",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Framework :: Flask",
+    "Framework :: Django",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Operating System :: OS Independent",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "motor>=3.3.0",
+    "pymongo>=4.5.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "typing-extensions>=4.8.0",
+]
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+]
+flask = [
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+]
+django = [
+    "django>=4.2.0",
+]
+starlette = [
+    "starlette>=0.32.0",
+]
+all = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "django>=4.2.0",
+    "starlette>=0.32.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.1.0",
+    "black>=23.11.0",
+    "mypy>=1.7.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/meharumar/monglo"
+Repository = "https://github.com/meharumar/monglo"
+Issues = "https://github.com/meharumar/monglo/issues"
+Changelog = "https://github.com/meharumar/monglo/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["monglo"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/monglo",
+    "/tests",
+    "/examples",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+
+[tool.black]
+target-version = ["py310", "py311", "py312"]
+line-length = 100
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
