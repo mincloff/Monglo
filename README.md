@@ -25,3 +25,7 @@
 <br/>
 
 <p align="center"><strong>Contact:</strong> <a href="mailto:contact@meharumar.codes">contact@meharumar.codes</a></p>
+
+```bash
+pip install monglo
+```
