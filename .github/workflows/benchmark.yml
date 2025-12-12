@@ -1,8 +1,47 @@
-# TODO: enable after v0.1 code drop
-on: [push, pull_request]
+name: Benchmarks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
 jobs:
-  lint:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]') && false"
+  benchmark:
     runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+    
     steps:
-      - run: echo "work in progress"
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install pytest-benchmark
+      
+      - name: Run benchmarks
+        run: pytest benchmarks/ --benchmark-only --benchmark-json=benchmark-results.json
+        env:
+          MONGODB_TEST_URI: mongodb://localhost:27017
+      
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: Python Benchmark
+          tool: 'pytest'
+          output-file-path: benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
