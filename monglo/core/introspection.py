@@ -91,6 +91,10 @@ class SchemaIntrospector:
                 "sample_values": info["sample_values"][:5]  # First 5 samples
             }
             
+            # Add array item type if present
+            if "array_item_type" in info:
+                schema[field_path]["array_item_type"] = info["array_item_type"]
+            
             # Add additional type info if field has multiple types
             if len(info["types"]) > 1:
                 schema[field_path]["alternative_types"] = list(info["types"].keys())

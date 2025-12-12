@@ -259,19 +259,23 @@ class RelationshipDetector:
         
         Args:
             field: Field name to convert
+        Args:
+            field: Field name (e.g., "user_id", "author_id", "product_ids")
             
         Returns:
             Guessed collection name
-            
-        Example:
-            >>> detector._guess_collection_from_field("user_id")
-            'users'
-            >>> detector._guess_collection_from_field("category_ids")
-            'categories'
         """
-        # Remove _id or _ids suffix
-        base = field.replace("_id", "").replace("_ids", "")
-        return self._pluralize(base)
+        # Handle _ids (plural) - BUT don't use the _ids suffix as already plural
+        # Extract the base word and pluralize it properly
+        if field.endswith("_ids"):
+            base = field[:-4]  # Remove "_ids": category_ids → category
+            return self._pluralize(base)  # category → categories
+        # Handle _id (singular) - need to pluralize
+        elif field.endswith("_id"):
+            base = field[:-3]  # Remove "_id": user_id → user
+            return self._pluralize(base)  # user → users
+        else:
+            return self._pluralize(field)
     
     def _pluralize(self, word: str) -> str:
         """Simple pluralization for collection name guessing.
@@ -288,10 +292,10 @@ class RelationshipDetector:
             >>> detector._pluralize("category")
             'categories'
         """
-        if word.endswith("y"):
+        if word.endswith("y") and len(word) > 1 and word[-2] not in "aeiou":
             return f"{word[:-1]}ies"  # category → categories
-        elif word.endswith("s"):
-            return f"{word}es"  # class → classes
+        elif word.endswith(("s", "ss", "x", "z", "ch", "sh")):
+            return f"{word}es"  # class → classes, box → boxes
         else:
             return f"{word}s"  # user → users
 

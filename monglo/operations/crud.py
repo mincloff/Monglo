@@ -5,6 +5,8 @@ Provides create, read, update, delete operations with proper error handling,
 validation, and integration with the Monglo core components.
 """
 
+from __future__ import annotations
+
 from typing import Any
 from bson import ObjectId
 from bson.errors import InvalidId

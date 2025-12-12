@@ -5,6 +5,8 @@ This module provides Pydantic models for configuring collections, views, and fil
 All configuration is type-safe and validated at runtime.
 """
 
+from __future__ import annotations
+
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 

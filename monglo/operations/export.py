@@ -4,6 +4,8 @@ Export operations for MongoDB collections.
 Provides data export functionality in various formats (JSON, CSV).
 """
 
+from __future__ import annotations
+
 import csv
 import json
 from typing import Any, Literal
