@@ -16,6 +16,38 @@ UI_DIR = Path(__file__).parent.parent.parent / "monglo_ui"
 STATIC_DIR = UI_DIR / "static"
 TEMPLATES_DIR = UI_DIR / "templates"
 
+def setup_ui(
+    app,
+    engine: MongloEngine,
+    prefix: str = "/admin",
+    title: str = "Monglo Admin",
+    logo: str | None = None,
+    brand_color: str = "#10b981",
+) -> None:
+    """
+    Setup Monglo UI on a FastAPI application.
+    
+    This automatically mounts static files and includes the UI router.
+    Users don't need to manually configure anything.
+    
+    Args:
+        app: FastAPI application instance
+        engine: MongloEngine instance
+        prefix: URL prefix for admin UI (default: "/admin")
+        title: Page title
+        logo: Optional logo URL
+        brand_color: Brand color in hex
+    """
+    from fastapi.staticfiles import StaticFiles
+    
+    # Mount static files on the main app
+    app.mount(f"{prefix}/static", StaticFiles(directory=str(STATIC_DIR)), name="admin_static")
+    
+    # Include the UI router
+    router = create_ui_router(engine, prefix, title, logo, brand_color)
+    app.include_router(router)
+
+
 def create_ui_router(
     engine: MongloEngine,
     prefix: str = "/admin",
@@ -27,9 +59,7 @@ def create_ui_router(
     
     # Setup Jinja2 templates with all filters
     templates = _setup_templates()
-    
-    # Mount static files
-    router.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="admin_static")
+
     
     # ==================== UI ROUTES ====================
     
@@ -183,6 +213,7 @@ def create_ui_router(
         serialized = serializer._serialize_value(created)
         
         return {"success": True, "document": serialized}
+    
     
     return router
 

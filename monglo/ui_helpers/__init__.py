@@ -1,4 +1,3 @@
+from .fastapi import setup_ui as setup_fastapi_ui, create_ui_router
 
-from .fastapi import create_ui_router
-
-__all__ = ["create_ui_router"]
+__all__ = ["setup_fastapi_ui", "create_ui_router"]
