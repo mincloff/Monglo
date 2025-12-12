@@ -75,6 +75,11 @@ from .fields import (
     DBRefField,
 )
 
+# Adapters (optional - require framework dependencies)
+# from .adapters.fastapi import FastAPIAdapter, create_fastapi_router
+# from .adapters.flask import FlaskAdapter, create_flask_blueprint
+# from .adapters.django import CollectionView, create_django_urls
+
 __all__ = [
     # Metadata
     "__version__",
