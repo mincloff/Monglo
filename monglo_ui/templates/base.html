@@ -10,6 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/admin.css">
 
@@ -22,26 +25,19 @@
         <aside class="monglo-sidebar">
             <div class="monglo-sidebar-header">
                 <div class="monglo-logo">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-                    </svg>
+                    <i class="fas fa-database"></i>
                     Monglo Admin
                 </div>
             </div>
 
             <nav class="monglo-collections">
-                <h3
-                    style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); padding: var(--spacing-sm) var(--spacing-md); margin-bottom: var(--spacing-sm);">
-                    Collections
+                <h3 class="monglo-collection-group-title">
+                    <i class="fas fa-layer-group"></i> Collections
                 </h3>
                 {% for collection in collections %}
                 <a href="/admin/{{ collection.name }}"
                     class="monglo-collection-item {% if current_collection == collection.name %}active{% endif %}">
-                    <svg class="monglo-collection-icon" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4z" />
-                        <path fill-rule="evenodd"
-                            d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    </svg>
+                    <i class="fas fa-table"></i>
                     <span>{{ collection.display_name or collection.name }}</span>
                     <span class="monglo-collection-count">{{ collection.count }}</span>
                 </a>
@@ -54,21 +50,16 @@
             <!-- Header -->
             <header class="monglo-header">
                 <div class="monglo-breadcrumb">
-                    <a href="/admin" style="color: var(--gray-600); text-decoration: none;">Home</a>
                     {% if current_collection %}
-                    <span class="monglo-breadcrumb-separator">/</span>
-                    <span style="color: var(--gray-900); font-weight: 600;">{{ current_collection }}</span>
+                    <i class="fas fa-table"></i>
+                    <span class="active">{{ current_collection }}</span>
+                    {% else %}
+                    <i class="fas fa-home"></i>
+                    <span class="active">Dashboard</span>
                     {% endif %}
                 </div>
 
                 <div class="monglo-actions">
-                    <button class="monglo-btn monglo-btn-secondary">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" />
-                        </svg>
-                        Filters
-                    </button>
                     {% block header_actions %}{% endblock %}
                 </div>
             </header>
@@ -81,6 +72,10 @@
     </div>
 
     <!-- Scripts -->
+    <script src="/static/js/dark-mode.js"></script>
+    <script src="/static/js/sidebar-resize.js"></script>
+    <script src="/static/js/edit-modal.js"></script>
+    <script src="/static/js/create-modal.js"></script>
     <script src="/static/js/table-view.js"></script>
     <script src="/static/js/document-view.js"></script>
     {% block extra_scripts %}{% endblock %}

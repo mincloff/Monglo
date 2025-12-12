@@ -1,6 +1,20 @@
-# FastAPI Example
+# FastAPI Example with Professional UI
 
-Complete working example of Monglo with FastAPI.
+Complete working example of Monglo with **professional admin interface**.
+
+## Features
+
+✨ **Professional UI** with custom color palette
+- Navy sidebar with gradient
+- Green primary actions
+- Cream backgrounds
+- Modern animations
+
+📊 **Complete Admin Interface**
+- Table view with search, sort, filters
+- Document view with JSON tree
+- Relationship navigation
+- CRUD operations
 
 ## Setup
 
@@ -8,75 +22,80 @@ Complete working example of Monglo with FastAPI.
 # Install dependencies
 pip install -r requirements.txt
 
-# Or install from parent directory
-pip install -e ../..
+# Start MongoDB (required)
+# Make sure MongoDB is running on localhost:27017
 ```
 
 ## Run
 
 ```bash
-# Start MongoDB (if not running)
-# mongod
-
-# Run the app
 python app.py
-
-# Or with uvicorn directly
-uvicorn app:app --reload
 ```
+
+The app will automatically:
+- Connect to MongoDB
+- Seed example data (users, products, orders)
+- Initialize Monglo engine
+- Start server on http://localhost:8000
+
+## Access Points
+
+- **Admin UI**: http://localhost:8000/admin
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+
+## What You'll See
+
+### Collections
+- **users** - 3 sample users
+- **products** - 3 sample products  
+- **orders** - 2 sample orders with relationships
+
+### Features to Try
+1. **Table View**: Browse collections with sorting and search
+2. **Document View**: Click any row to see full document
+3. **Relationships**: Orders link to users and products
+4. **Search**: Try searching for "Alice" or "Laptop"
+5. **Filters**: Use the filters in toolbar
+
+## UI Customization
+
+The UI uses templates from `../../monglo_ui/templates/` and styles from `../../monglo_ui/static/css/admin.css`.
+
+You can customize:
+- Colors in CSS variables
+- Templates in Jinja2
+- Add custom actions
+- Modify layouts
 
 ## API Endpoints
 
-Once running, visit:
-- **API Docs**: http://localhost:8000/docs
-- **Admin API**: http://localhost:8000/api/admin/
-- **Collection List**: http://localhost:8000/api/admin/
-
-### Auto-Generated Endpoints
-
-For each collection (e.g., `users`):
-
-```
-GET    /api/admin/users              - List documents
-GET    /api/admin/users/{id}         - Get document
-POST   /api/admin/users              - Create document
-PUT    /api/admin/users/{id}         - Update document
-DELETE /api/admin/users/{id}         - Delete document
-GET    /api/admin/users/config/table - Table view config
-GET    /api/admin/users/config/document - Document view config
-```
-
-### Query Parameters
-
-- `page`: Page number (default: 1)
-- `per_page`: Items per page (default: 20, max: 100)
-- `search`: Search term
-- `sort`: Sort field (e.g., `created_at:desc`)
-
-### Example Requests
+All CRUD operations are available via REST API:
 
 ```bash
+# List collections
+curl http://localhost:8000/api/admin/
+
 # List users
 curl http://localhost:8000/api/admin/users?page=1&per_page=10
 
-# Search
-curl http://localhost:8000/api/admin/users?search=john
+# Get specific user
+curl http://localhost:8000/api/admin/users/{id}
 
 # Create user
 curl -X POST http://localhost:8000/api/admin/users \
   -H "Content-Type: application/json" \
-  -d '{"name": "Alice", "email": "alice@example.com"}'
-
-# Get table config
-curl http://localhost:8000/api/admin/users/config/table
+  -d '{"name": "New User", "email": "new@example.com"}'
 ```
 
-## Features
+## Professional Design
 
-- ✅ Auto-discovery of MongoDB collections
-- ✅ Auto-generated CRUD endpoints
-- ✅ Pagination and filtering
-- ✅ Search across configured fields
-- ✅ View configuration endpoints
-- ✅ Interactive API docs (Swagger UI)
-- ✅ CORS enabled
+The UI features:
+- Navy sidebar (#002b60) with gradient
+- Green primary buttons (#4DB33D)
+- Orange accents (#f56400)
+- Cream background (#E8E7D5)
+- Professional shadows and animations
+- Responsive layout
+
+Enjoy exploring Monglo Admin! 🚀

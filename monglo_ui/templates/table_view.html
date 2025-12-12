@@ -4,18 +4,12 @@
 
 {% block header_actions %}
 <button class="monglo-btn monglo-btn-primary" onclick="createDocument()">
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd"
-            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
-    </svg>
-    New {{ collection.display_name or collection.name }}
+    <i class="fas fa-plus"></i>
+    New
 </button>
-<button class="monglo-btn monglo-btn-secondary" onclick="exportData()">
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd"
-            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
-    </svg>
-    Export
+<button class="monglo-btn monglo-btn-secondary" id="bulk-delete-btn" style="display: none;" onclick="bulkDelete()">
+    <i class="fas fa-trash"></i>
+    Delete Selected
 </button>
 {% endblock %}
 
@@ -26,20 +20,6 @@
         <input type="text" class="monglo-input" placeholder="Search {{ collection.name }}..." id="search-input"
             onkeyup="handleSearch(event)">
     </div>
-
-    <select class="monglo-input" style="min-width: 150px;" onchange="handleSort(event)">
-        <option value="">Sort by...</option>
-        {% for field in config.sortable_fields %}
-        <option value="{{ field }}:asc">{{ field }} ↑</option>
-        <option value="{{ field }}:desc">{{ field }} ↓</option>
-        {% endfor %}
-    </select>
-
-    <select class="monglo-input" style="min-width: 120px;" onchange="handlePerPage(event)">
-        <option value="20">20 per page</option>
-        <option value="50">50 per page</option>
-        <option value="100">100 per page</option>
-    </select>
 </div>
 
 <!-- Table -->
@@ -47,23 +27,23 @@
     <table class="monglo-table" id="data-table">
         <thead>
             <tr>
-                <th>
-                    <input type="checkbox" onchange="toggleSelectAll(this)">
+                <th style="width: 50px;">
+                    <input type="checkbox" onchange="toggleSelectAll(this)" id="select-all">
                 </th>
                 {% for column in config.columns %}
                 <th onclick="sortBy('{{ column.field }}')">
                     {{ column.label }}
-                    <span class="sort-indicator"></span>
+                    <i class="fas fa-sort sort-indicator" id="sort-{{ column.field }}"></i>
                 </th>
                 {% endfor %}
-                <th style="text-align: right;">Actions</th>
+                <th style="text-align: right; width: 120px;">Actions</th>
             </tr>
         </thead>
         <tbody id="table-body">
-            {% for item in data.items %}
+            {% for item in data['items'] %}
             <tr data-id="{{ item._id }}">
                 <td>
-                    <input type="checkbox" class="row-checkbox" value="{{ item._id }}">
+                    <input type="checkbox" class="row-checkbox" value="{{ item._id }}" onchange="updateBulkActions()">
                 </td>
                 {% for column in config.columns %}
                 <td>
@@ -72,12 +52,13 @@
                         {{ item[column.field]|format_datetime }}
                     </span>
                     {% elif column.formatter == 'objectid' %}
-                    <code style="font-size: 0.75rem; color: var(--gray-600);">
+                    <code style="font-size: 0.75rem; color: var(--text-secondary);">
                             {{ item[column.field]|str|truncate(8) }}
                         </code>
                     {% elif column.formatter == 'boolean' %}
                     <span
                         class="monglo-badge {% if item[column.field] %}monglo-badge-success{% else %}monglo-badge-danger{% endif %}">
+                        <i class="fas fa-{% if item[column.field] %}check{% else %}times{% endif %}"></i>
                         {{ item[column.field] }}
                     </span>
                     {% else %}
@@ -87,20 +68,17 @@
                 {% endfor %}
                 <td style="text-align: right;">
                     <div class="monglo-table-actions">
-                        <button class="monglo-btn monglo-btn-secondary"
-                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
-                            onclick="viewDocument('{{ item._id }}')">
-                            View
+                        <button class="monglo-btn monglo-btn-secondary monglo-btn-sm"
+                            onclick="viewDocument('{{ item._id }}')" title="View">
+                            <i class="fas fa-eye"></i>
                         </button>
-                        <button class="monglo-btn monglo-btn-secondary"
-                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
-                            onclick="editDocument('{{ item._id }}')">
-                            Edit
+                        <button class="monglo-btn monglo-btn-primary monglo-btn-sm"
+                            onclick="editDocument('{{ item._id }}'); event.stopPropagation();" title="Edit">
+                            <i class="fas fa-edit"></i>
                         </button>
-                        <button class="monglo-btn monglo-btn-danger"
-                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
-                            onclick="deleteDocument('{{ item._id }}')">
-                            Delete
+                        <button class="monglo-btn monglo-btn-danger monglo-btn-sm"
+                            onclick="deleteDocument('{{ item._id }}')" title="Delete">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
@@ -113,36 +91,40 @@
 <!-- Pagination -->
 <div class="monglo-pagination monglo-fade-in">
     <div class="monglo-pagination-info">
-        Showing {{ (data.page - 1) * data.per_page + 1 }} -
-        {{ min(data.page * data.per_page, data.total) }}
-        of {{ data.total }} results
+        <span>{{ data.total }} total results</span>
+        <select class="monglo-input monglo-input-sm" onchange="handlePerPage(event)" style="margin-left: 1rem;">
+            <option value="20" {% if data.per_page==20 %}selected{% endif %}>20 / page</option>
+            <option value="50" {% if data.per_page==50 %}selected{% endif %}>50 / page</option>
+            <option value="100" {% if data.per_page==100 %}selected{% endif %}>100 / page</option>
+        </select>
     </div>
 
     <div class="monglo-pagination-buttons">
-        {% if data.has_prev %}
-        <button class="monglo-btn monglo-btn-secondary" onclick="goToPage({{ data.page - 1 }})">
-            Previous
+        <button class="monglo-btn monglo-btn-secondary monglo-btn-sm" onclick="goToPage(1)" {% if not data.has_prev
+            %}disabled{% endif %}>
+            <i class="fas fa-angle-double-left"></i>
         </button>
-        {% endif %}
+        <button class="monglo-btn monglo-btn-secondary monglo-btn-sm" onclick="goToPage({{ data.page - 1 }})" {% if not
+            data.has_prev %}disabled{% endif %}>
+            <i class="fas fa-angle-left"></i>
+        </button>
 
-        {% for page_num in range(max(1, data.page - 2), min(data.pages + 1, data.page + 3)) %}
-        <button
-            class="monglo-btn {% if page_num == data.page %}monglo-btn-primary{% else %}monglo-btn-secondary{% endif %}"
-            onclick="goToPage({{ page_num }})">
-            {{ page_num }}
-        </button>
-        {% endfor %}
+        <span style="padding: 0 1rem; color: var(--text-secondary); font-weight: 600;">
+            Page {{ data.page }} of {{ data.pages }}
+        </span>
 
-        {% if data.has_next %}
-        <button class="monglo-btn monglo-btn-secondary" onclick="goToPage({{ data.page + 1 }})">
-            Next
+        <button class="monglo-btn monglo-btn-secondary monglo-btn-sm" onclick="goToPage({{ data.page + 1 }})" {% if not
+            data.has_next %}disabled{% endif %}>
+            <i class="fas fa-angle-right"></i>
         </button>
-        {% endif %}
+        <button class="monglo-btn monglo-btn-secondary monglo-btn-sm" onclick="goToPage({{ data.pages }})" {% if not
+            data.has_next %}disabled{% endif %}>
+            <i class="fas fa-angle-double-right"></i>
+        </button>
     </div>
 </div>
 
 <script>
-    // Table View JavaScript
     const collection = '{{ collection.name }}';
     let currentPage = {{ data.page }};
     let currentSearch = '';
@@ -152,13 +134,9 @@
     function handleSearch(event) {
         if (event.key === 'Enter') {
             currentSearch = event.target.value;
+            currentPage = 1;
             reloadTable();
         }
-    }
-
-    function handleSort(event) {
-        currentSort = event.target.value;
-        reloadTable();
     }
 
     function handlePerPage(event) {
@@ -172,6 +150,15 @@
         reloadTable();
     }
 
+    function sortBy(field) {
+        if (currentSort === `${field}:asc`) {
+            currentSort = `${field}:desc`;
+        } else {
+            currentSort = `${field}:asc`;
+        }
+        reloadTable();
+    }
+
     function reloadTable() {
         const params = new URLSearchParams({
             page: currentPage,
@@ -179,7 +166,6 @@
             search: currentSearch,
             sort: currentSort
         });
-
         window.location.href = `?${params.toString()}`;
     }
 
@@ -187,30 +173,62 @@
         window.location.href = `/admin/${collection}/document/${id}`;
     }
 
-    function editDocument(id) {
-        window.location.href = `/admin/${collection}/edit/${id}`;
-    }
-
     function deleteDocument(id) {
         if (confirm('Are you sure you want to delete this document?')) {
-            fetch(`/admin/${collection}/${id}`, { method: 'DELETE' })
+            fetch(`/api/admin/${collection}/${id}`, { method: 'DELETE' })
+                .then(response => response.json())
                 .then(() => reloadTable())
                 .catch(err => alert('Error deleting document'));
         }
     }
 
     function createDocument() {
-        window.location.href = `/admin/${collection}/new`;
-    }
-
-    function exportData() {
-        window.location.href = `/admin/${collection}/export`;
+        const data = prompt('Enter JSON data for new document:');
+        if (data) {
+            try {
+                const parsed = JSON.parse(data);
+                fetch(`/api/admin/${collection}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(parsed)
+                })
+                    .then(response => response.json())
+                    .then(() => reloadTable())
+                    .catch(err => alert('Error creating document'));
+            } catch (e) {
+                alert('Invalid JSON');
+            }
+        }
     }
 
     function toggleSelectAll(checkbox) {
         document.querySelectorAll('.row-checkbox').forEach(cb => {
             cb.checked = checkbox.checked;
         });
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.row-checkbox:checked').length;
+        const bulkBtn = document.getElementById('bulk-delete-btn');
+        if (selected > 0) {
+            bulkBtn.style.display = 'inline-flex';
+            bulkBtn.textContent = `Delete ${selected} Selected`;
+            bulkBtn.innerHTML = `<i class="fas fa-trash"></i> Delete ${selected}`;
+        } else {
+            bulkBtn.style.display = 'none';
+        }
+    }
+
+    function bulkDelete() {
+        const selected = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+        if (confirm(`Delete ${selected.length} documents?`)) {
+            Promise.all(selected.map(id =>
+                fetch(`/api/admin/${collection}/${id}`, { method: 'DELETE' })
+            ))
+                .then(() => reloadTable())
+                .catch(err => alert('Error deleting documents'));
+        }
     }
 </script>
 {% endblock %}
