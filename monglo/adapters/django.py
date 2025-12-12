@@ -1,116 +1,232 @@
 """
 Django adapter for Monglo.
 
-Provides ViewSet and URL patterns for MongoDB collections.
+AUTO-CREATES ALL URL PATTERNS - Developers never touch routing!
+
+Example:
+    >>> # In urls.py
+    >>> from monglo.adapters.django import create_django_urls
+    >>> from monglo import MongloEngine
+    >>> 
+    >>> engine = MongloEngine(database=db, auto_discover=True)
+    >>> await engine.initialize()
+    >>> 
+    >>> urlpatterns = [
+    ...     *create_django_urls(engine, prefix="api/admin"),
+    ... ]
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+import json
 
 from django.http import JsonResponse
 from django.urls import path
 from django.views import View
 
-from ..core.engine import MongloEngine
-from ..core.registry import CollectionAdmin
-from ..operations.crud import CRUDOperations
-from ..serializers.json import JSONSerializer
+if TYPE_CHECKING:
+    from ..core.engine import MongloEngine
 
 
-class CollectionView(View):
-    """Base view for collection operations."""
-
-    def __init__(self, admin: CollectionAdmin, **kwargs):
-        super().__init__(**kwargs)
-        self.admin = admin
-        self.crud = CRUDOperations(admin)
-        self.serializer = JSONSerializer()
-
-    async def get(self, request, id=None):
-        """GET handler."""
-        try:
-            if id:
-                # Get single document
-                doc = await self.crud.get(id)
-                return JsonResponse(self._serialize_doc(doc))
-            else:
-                # List documents
-                page = int(request.GET.get("page", 1))
-                per_page = int(request.GET.get("per_page", 20))
-                search = request.GET.get("search")
-
-                result = await self.crud.list(page=page, per_page=per_page, search=search)
-                result["items"] = [self._serialize_doc(d) for d in result["items"]]
-                return JsonResponse(result)
-        except (ValueError, KeyError) as e:
-            return JsonResponse({"error": str(e)}, status=404)
-
-    async def post(self, request):
-        """POST handler - create document."""
-        try:
-            import json
-
-            data = json.loads(request.body)
-            doc = await self.crud.create(data)
-            return JsonResponse(self._serialize_doc(doc), status=201)
-        except ValueError as e:
-            return JsonResponse({"error": str(e)}, status=400)
-
-    async def put(self, request, id):
-        """PUT handler - update document."""
-        try:
-            import json
-
-            data = json.loads(request.body)
-            doc = await self.crud.update(id, data)
-            return JsonResponse(self._serialize_doc(doc))
-        except ValueError as e:
-            return JsonResponse({"error": str(e)}, status=400)
-        except KeyError as e:
-            return JsonResponse({"error": str(e)}, status=404)
-
-    async def delete(self, request, id):
-        """DELETE handler."""
-        try:
-            deleted = await self.crud.delete(id)
-            if not deleted:
-                return JsonResponse({"error": "Not found"}, status=404)
-            return JsonResponse({"success": True, "id": id})
-        except ValueError as e:
-            return JsonResponse({"error": str(e)}, status=400)
-
-    def _serialize_doc(self, doc: dict[str, Any]) -> dict[str, Any]:
-        """Serialize document."""
-        return self.serializer._serialize_value(doc)
-
-
-def create_django_urls(engine: MongloEngine, prefix: str = "admin/api"):
-    """Create Django URL patterns for Monglo.
-
-    Args:
-        engine: MongloEngine instance
-        prefix: URL prefix
-
-    Returns:
-        List of URL patterns
-
-    Example:
-        >>> urlpatterns = [
-        ...     path('', include(create_django_urls(engine)))
-        ... ]
+def create_django_urls(engine: MongloEngine, prefix: str = "api/admin"):
     """
-    urlpatterns = []
-
-    for name, admin in engine.registry._collections.items():
-        view = CollectionView.as_view(admin=admin)
-
-        # Collection routes
-        urlpatterns.extend(
-            [
-                path(f"{prefix}/{name}/", view, name=f"monglo_{name}_list"),
-                path(f"{prefix}/{name}/<str:id>/", view, name=f"monglo_{name}_detail"),
+    Create Django URL patterns with ALL routes automatically.
+    
+    This creates a complete REST API for all registered collections.
+    Developers NEVER need to define routes manually.
+    
+    Args:
+        engine: Initialized MongloEngine instance
+        prefix: URL prefix for API
+    
+    Returns:
+        List of URL patterns ready to include
+    
+    Example:
+        >>> engine = MongloEngine(database=db, auto_discover=True)
+        >>> await engine.initialize()
+        >>> 
+        >>> # That's it - full API with all routes!
+       >>> urlpatterns = [*create_django_urls(engine)]
+    """
+    
+    # Collections list view
+    class CollectionsListView(View):
+        async def get(self, request):
+            """List all collections."""
+            collections = []
+            
+            for name, admin in engine.registry._collections.items():
+                count = await admin.collection.count_documents({})
+                collections.append({
+                    "name": name,
+                    "display_name": admin.display_name,
+                    "count": count,
+                    "relationships": len(admin.relationships)
+                })
+            
+            return JsonResponse({"collections": collections})
+    
+    # Collection operations view
+    class CollectionListCreateView(View):
+        async def get(self, request, collection):
+            """List documents with pagination, search, filters."""
+            from ..operations.crud import CRUDOperations
+            from ..serializers.json import JSONSerializer
+            
+            # Get query params
+            page = int(request.GET.get("page", 1))
+            per_page = int(request.GET.get("per_page", 20))
+            search = request.GET.get("search", "")
+            sort_by = request.GET.get("sort_by", "")
+            sort_dir = request.GET.get("sort_dir", "asc")
+            
+            # Get collection admin
+            admin = engine.registry.get(collection)
+            
+            # Build sort
+            sort_list = None
+            if sort_by:
+                sort_list = [(sort_by, -1 if sort_dir == "desc" else 1)]
+            
+            # Get data
+            crud = CRUDOperations(admin)
+            data = await crud.list(
+                page=page,
+                per_page=per_page,
+                search=search if search else None,
+                sort=sort_list
+            )
+            
+            # Serialize
+            serializer = JSONSerializer()
+            serialized_items = [serializer._serialize_value(item) for item in data["items"]]
+            
+            return JsonResponse({
+                **data,
+                "items": serialized_items
+            })
+        
+        async def post(self, request, collection):
+            """Create new document."""
+            from ..operations.crud import CRUDOperations
+            from ..serializers.json import JSONSerializer
+            
+            data = json.loads(request.body)
+            
+            admin = engine.registry.get(collection)
+            crud = CRUDOperations(admin)
+            
+            created = await crud.create(data)
+            
+            # Serialize
+            serializer = JSONSerializer()
+            serialized = serializer._serialize_value(created)
+            
+            return JsonResponse({"success": True, "document": serialized}, status=201)
+    
+    # Document operations view
+    class DocumentDetailView(View):
+        async def get(self, request, collection, id):
+            """Get single document."""
+            from ..operations.crud import CRUDOperations
+            from ..serializers.json import JSONSerializer
+            
+            admin = engine.registry.get(collection)
+            crud = CRUDOperations(admin)
+            
+            try:
+                document = await crud.get(id)
+            except KeyError:
+                return JsonResponse({"error": "Document not found"}, status=404)
+            
+            # Serialize
+            serializer = JSONSerializer()
+            serialized = serializer._serialize_value(document)
+            
+            return JsonResponse({"document": serialized})
+        
+        async def put(self, request, collection, id):
+            """Update document."""
+            from ..operations.crud import CRUDOperations
+            from ..serializers.json import JSONSerializer
+            
+            data = json.loads(request.body)
+            
+            admin = engine.registry.get(collection)
+            crud = CRUDOperations(admin)
+            
+            try:
+                updated = await crud.update(id, data)
+            except KeyError:
+               return JsonResponse({"error": "Document not found"}, status=404)
+            
+            # Serialize
+            serializer = JSONSerializer()
+            serialized = serializer._serialize_value(updated)
+            
+            return JsonResponse({"success": True, "document": serialized})
+        
+        async def delete(self, request, collection, id):
+            """Delete document."""
+            from ..operations.crud import CRUDOperations
+            
+            admin = engine.registry.get(collection)
+            crud = CRUDOperations(admin)
+            
+            try:
+                await crud.delete(id)
+            except KeyError:
+                return JsonResponse({"error": "Document not found"}, status=404)
+            
+            return JsonResponse({"success": True, "message": "Document deleted"})
+    
+    # View configuration views
+    class TableConfigView(View):
+        async def get(self, request, collection):
+            """Get table view configuration."""
+            from ..views.table_view import TableView
+            
+            admin = engine.registry.get(collection)
+            view = TableView(admin)
+            config = view.render_config()
+            
+            return JsonResponse({"config": config})
+    
+    class DocumentConfigView(View):
+        async def get(self, request, collection):
+            """Get document view configuration."""
+            from ..views.document_view import DocumentView
+            
+            admin = engine.registry.get(collection)
+            view = DocumentView(admin)
+            config = view.render_config()
+            
+            return JsonResponse({"config": config})
+    
+    class RelationshipsView(View):
+        async def get(self, request, collection):
+            """Get collection relationships."""
+            admin = engine.registry.get(collection)
+            
+            relationships = [
+                {
+                    "source_field": rel.source_field,
+                    "target_collection": rel.target_collection,
+                    "type": rel.type.value
+                }
+                for rel in admin.relationships
             ]
-        )
-
-    return urlpatterns
+            
+            return JsonResponse({"relationships": relationships})
+    
+    # Auto-generate all URL patterns
+    return [
+        path(f"{prefix}/", CollectionsListView.as_view(), name="monglo_collections_list"),
+        path(f"{prefix}/<str:collection>/", CollectionListCreateView.as_view(), name="monglo_collection_list"),
+        path(f"{prefix}/<str:collection>/<str:id>/", DocumentDetailView.as_view(), name="monglo_document_detail"),
+        path(f"{prefix}/<str:collection>/config/table/", TableConfigView.as_view(), name="monglo_table_config"),
+        path(f"{prefix}/<str:collection>/config/document/", DocumentConfigView.as_view(), name="monglo_document_config"),
+        path(f"{prefix}/<str:collection>/relationships/", RelationshipsView.as_view(), name="monglo_relationships"),
+    ]

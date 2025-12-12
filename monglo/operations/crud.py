@@ -310,12 +310,105 @@ class CRUDOperations:
             else:
                 object_ids.append(id)
 
-        if not object_ids:
-            return {"deleted_count": 0, "success": True}
-
-        result = await self.collection.delete_many({"_id": {"$in": object_ids}})
-
-        return {"deleted_count": result.deleted_count, "requested_count": len(ids), "success": True}
+    async def bulk_create(self, documents: list[dict]) -> list[dict]:
+        """
+        Create multiple documents at once (bulk insert).
+        
+        More efficient than creating documents one by one.
+        
+        Args:
+            documents: List of documents to create
+        
+        Returns:
+            List of created documents with _id
+        
+        Example:
+            >>> docs = [
+            ...     {"name": "User 1", "email": "user1@example.com"},
+            ...     {"name": "User 2", "email": "user2@example.com"}
+            ... ]
+            >>> created = await crud.bulk_create(docs)
+        """
+        if not documents:
+            return []
+        
+        result = await self.collection.insert_many(documents)
+        
+        # Add _id to each document
+        for doc, inserted_id in zip(documents, result.inserted_ids):
+            doc["_id"] = inserted_id
+        
+        return documents
+    
+    async def bulk_update(
+        self,
+        updates: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """
+        Update multiple documents at once.
+        
+        Args:
+            updates: List of update operations, each with:
+                - filter: Query to match documents
+                - update: Update operations
+        
+        Returns:
+            Summary of bulk operation results
+        
+        Example:
+            >>> updates = [
+            ...     {
+            ...         "filter": {"status": "pending"},
+            ...         "update": {"$set": {"status": "active"}}
+            ...     },
+            ...     {
+            ...         "filter": {"expires_at": {"$lt": datetime.now()}},
+            ...         "update": {"$set": {"status": "expired"}}
+            ...     }
+            ... ]
+            >>> result = await crud.bulk_update(updates)
+        """
+        from pymongo import UpdateOne
+        
+        requests = [
+            UpdateOne(op["filter"], op["update"])
+            for op in updates
+        ]
+        
+        result = await self.collection.bulk_write(requests)
+        
+        return {
+            "matched": result.matched_count,
+            "modified": result.modified_count,
+            "upserted": result.upserted_count
+        }
+    
+    async def bulk_delete(self, ids: list[str]) -> int:
+        """
+        Delete multiple documents by IDs.
+        
+        More efficient than deleting one by one.
+        
+        Args:
+            ids: List of document IDs to delete
+        
+        Returns:
+            Number of documents deleted
+        
+        Example:
+            >>> deleted_count = await crud.bulk_delete(["id1", "id2", "id3"])
+        """
+        if not ids:
+            return 0
+        
+        # Convert string IDs to ObjectIds
+        object_ids = [self._to_object_id(id_str) for id_str in ids]
+        
+        result = await self.collection.delete_many({
+            "_id": {"$in": object_ids}
+        })
+        
+        return result.deleted_count
 
     async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count documents matching filters.

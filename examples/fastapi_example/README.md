@@ -1,101 +1,161 @@
-# FastAPI Example with Professional UI
+# FastAPI Example - Truly Minimal Setup
 
-Complete working example of Monglo with **professional admin interface**.
+## What You're Looking At
 
-## Features
+**5 lines of application code** = Full MongoDB admin interface
 
-✨ **Professional UI** with custom color palette
-- Navy sidebar with gradient
-- Green primary actions
-- Cream backgrounds
-- Modern animations
-
-📊 **Complete Admin Interface**
-- Table view with search, sort, filters
-- Document view with JSON tree
-- Relationship navigation
-- CRUD operations
-
-## Setup
+## Installation
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Start MongoDB (required)
-# Make sure MongoDB is running on localhost:27017
+pip install monglo[fastapi]
+# or manually:
+pip install monglo motor fastapi uvicorn
 ```
 
-## Run
+## The Code
+
+Look at [`app.py`](./app.py) - it's just:
+
+```python
+client = AsyncIOMotorClient("mongodb://localhost:27017")
+engine = MongloEngine(database=db, auto_discover=True)
+await engine.initialize()
+app.include_router(create_ui_router(engine))
+```
+
+**That's it. Seriously.**
+
+## What the Library Does Automatically
+
+### 🔍 Auto-Discovery
+✅ Scans all collections  
+✅ Infers field types  
+✅ Detects relationships (`user_id` → `users`)  
+✅ Generates schemas
+
+### 🎨 Complete UI
+✅ Professional admin interface  
+✅ Table view (sortable, filterable, searchable)  
+✅ Document view (JSON tree, nested docs)  
+✅ Sidebar navigation  
+✅ Dark mode toggle
+
+### 📡 REST API
+✅ `GET /api/{collection}` - List documents  
+✅ `GET /api/{collection}/{id}` - Get document  
+✅ `POST /api/{collection}` - Create document  
+✅ `PUT /api/{collection}/{id}` - Update document  
+✅ `DELETE /api/{collection}/{id}` - Delete document
+
+### ⚙️ All the Hard Stuff
+✅ Templates (bundled in library)  
+✅ Static files (CSS, JS)  
+✅ Jinja2 filters (datetime, truncate, etc.)  
+✅ Serialization (ObjectId, datetime, etc.)  
+✅ Routing (all UI and API routes)  
+✅ Error handling  
+✅ Pagination  
+✅ Search  
+
+## Run It
 
 ```bash
+cd examples/fastapi_example
 python app.py
 ```
 
-The app will automatically:
-- Connect to MongoDB
-- Seed example data (users, products, orders)
-- Initialize Monglo engine
-- Start server on http://localhost:8000
-
-## Access Points
-
+Open your browser:
 - **Admin UI**: http://localhost:8000/admin
 - **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
 
-## What You'll See
+## Comparison
 
-### Collections
-- **users** - 3 sample users
-- **products** - 3 sample products  
-- **orders** - 2 sample orders with relationships
+### ❌ Without Monglo (Typical Setup)
 
-### Features to Try
-1. **Table View**: Browse collections with sorting and search
-2. **Document View**: Click any row to see full document
-3. **Relationships**: Orders link to users and products
-4. **Search**: Try searching for "Alice" or "Laptop"
-5. **Filters**: Use the filters in toolbar
+```python
+# Define Pydantic models for every collection
+class User(BaseModel):
+    name: str
+    email: str
+    # ... 50 more lines
 
-## UI Customization
+# Define routes for every operation
+@app.get("/users")
+async def list_users(...):
+    # ... 30 lines
 
-The UI uses templates from `../../monglo_ui/templates/` and styles from `../../monglo_ui/static/css/admin.css`.
+@app.post("/users")
+async def create_user(...):
+    # ... 40 lines
 
-You can customize:
-- Colors in CSS variables
-- Templates in Jinja2
-- Add custom actions
-- Modify layouts
+# Setup templates
+templates = Jinja2Templates(...)
+# Add filters
+templates.env.filters['format_datetime'] = ...
+# ... 100 more lines
 
-## API Endpoints
+# Create UI routes
+@app.get("/admin/users")
+async def users_page(...):
+    # ... 50 lines
 
-All CRUD operations are available via REST API:
-
-```bash
-# List collections
-curl http://localhost:8000/api/admin/
-
-# List users
-curl http://localhost:8000/api/admin/users?page=1&per_page=10
-
-# Get specific user
-curl http://localhost:8000/api/admin/users/{id}
-
-# Create user
-curl -X POST http://localhost:8000/api/admin/users \
-  -H "Content-Type: application/json" \
-  -d '{"name": "New User", "email": "new@example.com"}'
+# And on and on...
 ```
 
-## Professional Design
+**Total: 500+ lines of boilerplate**
 
-The UI features:
-- Navy sidebar (#002b60) with gradient
-- Green primary buttons (#4DB33D)
-- Orange accents (#f56400)
-- Cream background (#E8E7D5)
-- Professional shadows and animations
-- Responsive layout
+### ✅ With Monglo
 
-Enjoy exploring Monglo Admin! 🚀
+```python
+engine = MongloEngine(database=db, auto_discover=True)
+await engine.initialize()
+app.include_router(create_ui_router(engine))
+```
+
+**Total: 3 lines**
+
+## What Makes This Possible?
+
+1. **Auto-Detection**: Library scans your database and understands structure
+2. **Bundled UI**: Templates and assets are packaged with the library
+3. **Smart Defaults**: Everything works out of the box
+4. **Convention Over Configuration**: Follows MongoDB best practices
+
+## Customization (Optional!)
+
+You don't need to customize anything, but if you want to:
+
+```python
+# Custom branding
+app.include_router(create_ui_router(
+    engine,
+    title="My Admin Panel",
+    logo="https://example.com/logo.png",
+    brand_color="#ff6b6b"
+))
+
+# Custom collection config
+await engine.register_collection(
+    "products",
+    config=CollectionConfig(
+        list_fields=["name", "price", "stock"],
+        search_fields=["name", "description"]
+    )
+)
+```
+
+But you don't have to! The defaults work perfectly.
+
+## This Is The Library's Promise
+
+**You write**: Business logic  
+**Library handles**: Everything else
+
+No templates. No serialization. No routing. No configuration.  
+Just instantiate and go.
+
+## Next Steps
+
+- See [Advanced Example](../advanced_example/) for auth, audit logging, transactions
+- Read [Configuration Guide](../CONFIGURATION_GUIDE.md)
+- Check [Full Documentation](../../docs/)

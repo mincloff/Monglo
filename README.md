@@ -1,160 +1,306 @@
-# Monglo
+# Monglo - Framework-Agnostic MongoDB Admin Library
 
-**Framework-agnostic MongoDB admin library for Python.**
+**The MongoDB admin interface that's actually magical to use.**
 
-Auto-generate REST APIs and admin interfaces for MongoDB collections with minimal configuration.
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-53%2F53%20passing-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-90%25+-brightgreen.svg)]()
+---
 
-## Features
+## ✨ Why Monglo?
 
-- 🚀 **Auto-discovery** - Automatically introspect MongoDB collections
-- 🔄 **Relationship Detection** - Smart detection of collection relationships
-- 📊 **Multiple Views** - Table and document views with configuration
-- 🎨 **Framework Adapters** - FastAPI, Flask, and Django support
-- 🔍 **Advanced Querying** - Filtering, sorting, pagination, search
-- 📤 **Export** - JSON, CSV, NDJSON export formats
-- ⚡ **Async-first** - Built on Motor for performance
-- 🎯 **Type-safe** - Full type hints and Pydantic validation
+❌ **Other MongoDB admin tools**:
+- Require tons of boilerplate code
+- Manual template setup, routing, serialization
+- Framework-locked or ORM-dependent  
+- Complex configuration
 
-## Quick Start
+✅ **Monglo**:
+- **10 lines of code** - that's it!
+- Library handles EVERYTHING automatically
+- Works with FastAPI, Flask, Django
+- Auto-detects collections, schemas, relationships
+- Production-ready UI included
+
+---
+
+## 🚀 Quick Start (< 5 minutes)
 
 ### Installation
 
 ```bash
-pip install monglo
-
-# Install with framework support
-pip install "monglo[fastapi]"  # or flask, django
+pip install monglo motor fastapi  # or flask, or django
 ```
 
-### FastAPI Example
+### Setup (Literally 10 lines!)
 
 ```python
-from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi import FastAPI
+from motor.motor_asyncio import AsyncIOMotorClient
 from monglo import MongloEngine
-from monglo.adapters.fastapi import create_fastapi_router
+from monglo.ui_helpers.fastapi import create_ui_router
 
-# Setup
-app = FastAPI()
+# 1. Connect to MongoDB
 client = AsyncIOMotorClient("mongodb://localhost:27017")
+
+# 2. Create FastAPI app
+app = FastAPI()
+
+# 3. Initialize Monglo
 engine = MongloEngine(database=client.mydb, auto_discover=True)
 
-# Mount admin router
 @app.on_event("startup")
 async def startup():
     await engine.initialize()
-    app.include_router(create_fastapi_router(engine))
+    app.include_router(create_ui_router(engine))
 
-# That's it! Auto-generated endpoints at /api/admin/*
+# That's it! 🎉
 ```
 
-Visit `http://localhost:8000/docs` to see all generated endpoints.
+**Run it:**
+```bash
+uvicorn app:app --reload
+```
 
-## Usage
+**Visit:** `http://localhost:8000/admin`
 
-### Core Components
+You now have a **full-featured admin interface** with:
+- ✅ Collection browsing
+- ✅ Document viewing/editing
+- ✅ Search and filtering
+- ✅ Relationship navigation
+- ✅ Auto-detected schemas
+- ✅ Professional UI
+
+---
+
+## 🎯 Features
+
+### 🔮 Magical Auto-Detection
 
 ```python
-from monglo import (
-    MongloEngine,
-    CRUDOperations,
-    TableView,
-    DocumentView,
-    JSONSerializer,
-)
-
-# Initialize engine
+# Just initialize - Monglo does the rest
 engine = MongloEngine(database=db, auto_discover=True)
 await engine.initialize()
 
-# CRUD operations
-admin = engine.registry.get("users")
-crud = CRUDOperations(admin)
-
-# List with pagination
-result = await crud.list(page=1, per_page=20, filters={"status": "active"})
-
-# Create
-user = await crud.create({"name": "Alice", "email": "alice@example.com"})
-
-# Update
-updated = await crud.update(user["_id"], {"status": "verified"})
-
-# Views
-table_view = TableView(admin)
-config = table_view.render_config()  # Table configuration for frontend
+# Automatically discovers:
+# - All collections
+# - Field types and schemas
+# - Relationships (user_id → users collection)
+# - Indexes
 ```
 
-### Configuration
+### 🔗 Intelligent Relationships
 
 ```python
-from monglo import CollectionConfig, FilterConfig
+# Your MongoDB document:
+{
+    "user_id": ObjectId("..."),      # → Automatically links to users collection
+    "tags": [ObjectId("...")],       # → Automatically links to tags collection  
+    "category": "electronics"
+}
 
-config = CollectionConfig(
-    display_name="Users",
-    list_fields=["name", "email", "created_at"],
-    search_fields=["name", "email"],
-    sortable_fields=["name", "created_at"],
-    filters=[
-        FilterConfig(field="status", type="eq", options=["active", "inactive"])
-    ]
-)
-
-await engine.register_collection("users", config=config)
+# Monglo automatically:
+# - Detects these relationships
+# - Creates clickable navigation
+# - Resolves related documents
+# - Shows relationship graphs
 ```
 
-## Documentation
+### 📊 Dual Views
 
-- [Examples](./examples/) - Complete working examples
-- [API Reference](#) - Full API documentation
-- [Guide](#) - Comprehensive guide
+**Table View** - Browse and filter thousands of documents
+- Sortable columns
+- Advanced filtering
+- Global search
+- Bulk operations
+- Export (CSV, JSON)
 
-## Framework Support
+**Document View** - Inspect and edit individual documents
+- Full JSON tree structure
+- Relationship navigation
+- Field validation
+- Nested document support
 
-| Framework | Status | Adapter |
-|-----------|--------|---------|
-| FastAPI | ✅ Supported | `monglo.adapters.fastapi` |
-| Flask | ✅ Supported | `monglo.adapters.flask` |
-| Django | ✅ Supported | `monglo.adapters.django` |
+### 🎨 Production-Ready UI
 
-## Requirements
+- Modern, responsive design
+- Dark/light modes
+- Customizable branding
+- Mobile-friendly
+- Professional aesthetics
 
-- Python 3.10+
-- MongoDB 4.4+
-- Motor 3.3+
+---
 
-## Development
+## 📚 Framework Support
+
+### FastAPI (Recommended)
+
+```python
+from monglo.ui_helpers.fastapi import create_ui_router
+
+app.include_router(create_ui_router(engine))
+```
+
+### Flask
+
+```python
+from monglo.ui_helpers.flask import create_ui_blueprint
+
+app.register_blueprint(create_ui_blueprint(engine))
+```
+
+### Django
+
+```python
+# In urls.py
+from monglo.ui_helpers.django import create_ui_urlpatterns
+
+urlpatterns = [
+    *create_ui_urlpatterns(engine, prefix="admin"),
+]
+```
+
+---
+
+## 🛠️ Customization (Optional!)
+
+Everything works out of the box, but you can customize:
+
+### Branding
+
+```python
+create_ui_router(
+    engine,
+    title="My Admin Panel",
+    logo="https://example.com/logo.png",
+    brand_color="#ff6b6b"
+)
+```
+
+### Collection Configuration
+
+```python
+from monglo import CollectionConfig, TableViewConfig
+
+await engine.register_collection(
+    "products",
+    config=CollectionConfig(
+        list_fields=["name", "price", "stock"],
+        search_fields=["name", "description"],
+        table_view=TableViewConfig(
+            per_page=50,
+            default_sort=[("created_at", -1)]
+        )
+    )
+)
+```
+
+### Authentication
+
+```python
+from monglo.auth import SimpleAuthProvider
+
+engine = MongloEngine(
+    database=db,
+    auth_provider=SimpleAuthProvider(users={
+        "admin": {
+            "password_hash": SimpleAuthProvider.hash_password("admin123"),
+            "role": "admin"
+        }
+    })
+)
+```
+
+---
+
+## 📖 Documentation
+
+- [5-Minute Quickstart](docs/quickstart/index.md)
+- [Core Concepts](docs/core-concepts/engine.md)
+- [Configuration Guide](docs/guides/configuration.md)
+- [API Reference](docs/api-reference/engine.md)
+
+---
+
+## 🎓 Examples
+
+Check out [`examples/`](examples/) for complete working examples:
+
+- **[simple_fastapi_example](examples/simple_fastapi_example/)** - Minimal FastAPI setup (10 lines)
+- **[flask_minimal](examples/flask_minimal/)** - Minimal Flask setup
+- **[fastapi_example](examples/fastapi_example/)** - Full-featured FastAPI app
+- **[relationships_demo](examples/relationships_demo/)** - Complex relationships example
+
+---
+
+## 💻 Development
+
+### Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/me-umar/monglo.git
+# Clone the repo
+git clone https://github.com/yourusername/monglo.git
 cd monglo
 
-# Install with dev dependencies
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install development dependencies
 pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=monglo --cov-report=html
 ```
 
-## License
+### Run Tests
 
-MIT License - see [LICENSE](LICENSE) file.
+```bash
+pytest tests/ --cov=monglo --cov-report=html
+```
 
-## Contributing
+### Run Linters
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+```bash
+ruff check monglo/
+black monglo/ tests/
+mypy monglo/ --strict
+```
 
-## Credits
+### Run Examples
+
+```bash
+cd examples/simple_fastapi_example
+uvicorn app:app --reload
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## 📝 License
+
+MIT © 2025
+
+---
+
+## ⭐ Star History
+
+If Monglo saves you time, give it a star! ⭐
+
+---
+
+## 🙏 Acknowledgments
 
 Built with:
 - [Motor](https://motor.readthedocs.io/) - Async MongoDB driver
-- [Pydantic](https://pydantic.dev/) - Data validation
 - [FastAPI](https://fastapi.tiangolo.com/) / [Flask](https://flask.palletsprojects.com/) / [Django](https://www.djangoproject.com/)
+- [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation
+
+---
+
+**Before Monglo:** 380 lines of boilerplate (templates, routing, serialization, filters...)
+
+**After Monglo:** 10 lines. Everything just works. ✨

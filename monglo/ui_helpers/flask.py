@@ -1,85 +1,96 @@
 """
-FastAPI UI Helper - Automatic Admin Interface Setup.
+Flask UI Helper - Automatic Admin Interface Setup.
 
-Provides a complete, ready-to-use admin UI with zero configuration.
-Developers just call create_ui_router() and everything works.
+Provides a complete, ready-to-use admin UI with zero configuration
+
+.
+Developers just call create_ui_blueprint() and everything works.
 
 Example:
-    >>> from monglo.ui_helpers.fastapi import create_ui_router
+    >>> from monglo.ui_helpers.flask import create_ui_blueprint
     >>> from monglo import MongloEngine
     >>> 
     >>> engine = MongloEngine(database=db, auto_discover=True)
     >>> await engine.initialize()
     >>> 
-    >>> # That's it - full UI with templates, static files, routing!
-    >>> app.include_router(create_ui_router(engine))
+    >>> # Full UI with templates, static files, routing!
+    >>> app.register_blueprint(create_ui_blueprint(engine))
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Request, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 
 if TYPE_CHECKING:
     from ..core.engine import MongloEngine
 
-# Get paths to UI assets (bundled with library)
+# Get paths to UI assets
 UI_DIR = Path(__file__).parent.parent.parent / "monglo_ui"
-STATIC_DIR = UI_DIR / "static"
-TEMPLATES_DIR = UI_DIR / "templates"
 
 
-def create_ui_router(
+def create_ui_blueprint(
     engine: MongloEngine,
-    prefix: str = "/admin",
+    name: str = "monglo_admin",
+    url_prefix: str = "/admin",
     title: str = "Monglo Admin",
     logo: str | None = None,
-    brand_color: str = "#10b981",  # Green
-) -> APIRouter:
+    brand_color: str = "#10b981",
+) -> Blueprint:
     """
-    Create a complete admin UI router with zero configuration.
+    Create a complete admin UI blueprint with zero configuration.
     
-    This function handles EVERYTHING:
+    This handles everything:
     - Static file serving
-    - Template rendering with all filters
+    - Template rendering with filters
     - All UI routes
     - Serialization
-    - View config generation
     
     Args:
         engine: Initialized MongloEngine instance
-        prefix: URL prefix for admin interface
+        name: Blueprint name
+        url_prefix: URL prefix for admin
         title: Admin interface title
         logo: Optional logo URL
-        brand_color: Primary brand color (hex)
+        brand_color: Primary brand color
     
     Returns:
-        FastAPI router ready to mount
+        Flask blueprint ready to register
     
     Example:
         >>> engine = MongloEngine(database=db, auto_discover=True)
         >>> await engine.initialize()
         >>> 
-        >>> app.include_router(create_ui_router(engine))
-        >>> # Visit http://localhost:8000/admin
+        >>> app.register_blueprint(create_ui_blueprint(engine))
+        >>> # Visit http://localhost:5000/admin
     """
-    router = APIRouter(prefix=prefix, tags=["Monglo Admin UI"])
+    bp = Blueprint(
+        name,
+        __name__,
+        url_prefix=url_prefix,
+        template_folder=str(UI_DIR / "templates"),
+        static_folder=str(UI_DIR / "static"),
+        static_url_path="/static"
+    )
     
-    # Setup Jinja2 templates with all filters
-    templates = _setup_templates()
+    # Register template filters
+    _register_filters(bp)
     
-    # Mount static files
-    router.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="admin_static")
+    # Add context processor for common variables
+    @bp.context_processor
+    def inject_globals():
+        return {
+            "title": title,
+            "logo": logo,
+            "brand_color": brand_color
+        }
     
     # ==================== UI ROUTES ====================
     
-    @router.get("/", response_class=HTMLResponse, name="admin_home")
-    async def admin_home(request: Request):
+    @bp.route("/")
+    async def admin_home():
         """Admin home page with collection list."""
         collections = []
         
@@ -92,27 +103,23 @@ def create_ui_router(
                 "relationships": len(admin.relationships)
             })
         
-        return templates.TemplateResponse("admin_home.html", {
-            "request": request,
-            "title": title,
-            "logo": logo,
-            "brand_color": brand_color,
-            "collections": collections,
-            "current_collection": None
-        })
+        return render_template(
+            "admin_home.html",
+            collections=collections,
+            current_collection=None
+        )
     
-    @router.get("/{collection}", response_class=HTMLResponse, name="table_view")
-    async def table_view(
-        request: Request,
-        collection: str,
-        page: int = Query(1, ge=1),
-        per_page: int = Query(20, ge=1, le=100),
-        search: Optional[str] = None,
-        sort: Optional[str] = None
-    ):
+    @bp.route("/<collection>")
+    async def table_view(collection: str):
         """Table view for a collection."""
         from ..views.table_view import TableView
         from ..operations.crud import CRUDOperations
+        
+        # Get query params
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 20))
+        search = request.args.get("search", "")
+        sort = request.args.get("sort", "")
         
         # Get collection admin
         admin = engine.registry.get(collection)
@@ -139,24 +146,17 @@ def create_ui_router(
         # Get all collections for sidebar
         collections = await _get_all_collections(engine)
         
-        return templates.TemplateResponse("table_view.html", {
-            "request": request,
-            "title": title,
-            "logo": logo,
-            "brand_color": brand_color,
-            "collection": admin,
-            "config": config,
-            "data": data,
-            "collections": collections,
-            "current_collection": collection
-        })
+        return render_template(
+            "table_view.html",
+            collection=admin,
+            config=config,
+            data=data,
+            collections=collections,
+            current_collection=collection
+        )
     
-    @router.get("/{collection}/document/{id}", response_class=HTMLResponse, name="document_view")
-    async def document_view(
-        request: Request,
-        collection: str,
-        id: str
-    ):
+    @bp.route("/<collection>/document/<id>")
+    async def document_view(collection: str, id: str):
         """Document detail view."""
         from ..views.document_view import DocumentView
         from ..operations.crud import CRUDOperations
@@ -170,8 +170,7 @@ def create_ui_router(
         try:
             document = await crud.get(id)
         except KeyError:
-            # Document not found
-            return RedirectResponse(url=f"{prefix}/{collection}", status_code=302)
+            return redirect(url_for(f"{name}.table_view", collection=collection))
         
         # Serialize for template safety
         serializer = JSONSerializer()
@@ -184,22 +183,19 @@ def create_ui_router(
         # Get all collections for sidebar
         collections = await _get_all_collections(engine)
         
-        return templates.TemplateResponse("document_view.html", {
-            "request": request,
-            "title": title,
-            "logo": logo,
-            "brand_color": brand_color,
-            "collection": admin,
-            "document": serialized_doc,
-            "config": config,
-            "relationships": admin.relationships,
-            "collections": collections,
-            "current_collection": collection
-        })
+        return render_template(
+            "document_view.html",
+            collection=admin,
+            document=serialized_doc,
+            config=config,
+            relationships=admin.relationships,
+            collections=collections,
+            current_collection=collection
+        )
     
-    # ==================== API ROUTES (for UI interactions) ====================
+    # ==================== API ROUTES ====================
     
-    @router.delete("/{collection}/{id}", name="delete_document")
+    @bp.route("/<collection>/<id>", methods=["DELETE"])
     async def delete_document(collection: str, id: str):
         """Delete a document."""
         from ..operations.crud import CRUDOperations
@@ -208,13 +204,15 @@ def create_ui_router(
         crud = CRUDOperations(admin)
         
         await crud.delete(id)
-        return {"success": True, "message": "Document deleted"}
+        return jsonify({"success": True, "message": "Document deleted"})
     
-    @router.put("/{collection}/{id}", name="update_document")
-    async def update_document(collection: str, id: str, data: dict):
+    @bp.route("/<collection>/<id>", methods=["PUT"])
+    async def update_document(collection: str, id: str):
         """Update a document."""
         from ..operations.crud import CRUDOperations
         from ..serializers.json import JSONSerializer
+        
+        data = request.get_json()
         
         admin = engine.registry.get(collection)
         crud = CRUDOperations(admin)
@@ -225,13 +223,15 @@ def create_ui_router(
         serializer = JSONSerializer()
         serialized = serializer._serialize_value(updated)
         
-        return {"success": True, "document": serialized}
+        return jsonify({"success": True, "document": serialized})
     
-    @router.post("/{collection}", name="create_document")
-    async def create_document(collection: str, data: dict):
+    @bp.route("/<collection>", methods=["POST"])
+    async def create_document(collection: str):
         """Create a new document."""
         from ..operations.crud import CRUDOperations
         from ..serializers.json import JSONSerializer
+        
+        data = request.get_json()
         
         admin = engine.registry.get(collection)
         crud = CRUDOperations(admin)
@@ -242,20 +242,15 @@ def create_ui_router(
         serializer = JSONSerializer()
         serialized = serializer._serialize_value(created)
         
-        return {"success": True, "document": serialized}
+        return jsonify({"success": True, "document": serialized})
     
-    return router
+    return bp
 
 
-def _setup_templates() -> Jinja2Templates:
-    """
-    Setup Jinja2 templates with all necessary filters and globals.
+def _register_filters(bp: Blueprint):
+    """Register Jinja2 filters on blueprint."""
     
-    Developers never need to touch this - it's all automatic.
-    """
-    templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-    
-    # Add datetime formatter filter
+    @bp.app_template_filter("format_datetime")
     def format_datetime(value):
         """Format datetime for display."""
         if value is None:
@@ -265,7 +260,7 @@ def _setup_templates() -> Jinja2Templates:
             return value.strftime("%Y-%m-%d %H:%M:%S")
         return str(value)
     
-    # Add type class filter (for CSS styling)
+    @bp.app_template_filter("type_class")
     def type_class(value):
         """Get CSS class for value type."""
         if isinstance(value, str):
@@ -280,28 +275,16 @@ def _setup_templates() -> Jinja2Templates:
             return "array"
         return ""
     
-    # Add truncate filter
+    @bp.app_template_filter("truncate")
     def truncate(s, length=50):
         """Truncate string to length."""
         if not isinstance(s, str):
             s = str(s)
         return s[:length] + '...' if len(s) > length else s
-    
-    # Register all filters
-    templates.env.filters['format_datetime'] = format_datetime
-    templates.env.filters['type_class'] = type_class
-    templates.env.filters['str'] = str
-    templates.env.filters['truncate'] = truncate
-    
-    return templates
 
 
 async def _get_all_collections(engine: MongloEngine) -> list[dict[str, Any]]:
-    """
-    Get all collections with counts for sidebar.
-    
-    Internal helper - developers never call this.
-    """
+    """Get all collections with counts for sidebar."""
     collections = []
     for name, admin in engine.registry._collections.items():
         count = await admin.collection.count_documents({})

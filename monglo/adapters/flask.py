@@ -1,163 +1,231 @@
 """
 Flask adapter for Monglo.
 
-Generates Blueprint with admin routes for MongoDB collections.
+AUTO-CREATES ALL API ROUTES - Developers never touch routing!
+
+Example:
+    >>> from monglo.adapters.flask import create_flask_blueprint
+    >>> from monglo import MongloEngine
+    >>> 
+    >>> engine = Monglo Engine(database=db, auto_discover=True)
+    >>> await engine.initialize()
+    >>> 
+    >>> # Get complete API blueprint with ALL routes
+    >>> api_bp = create_flask_blueprint(engine, url_prefix="/api/admin")
+    >>> app.register_blueprint(api_bp)
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from flask import Blueprint, jsonify, request
 
-from ..core.engine import MongloEngine
-from ..core.registry import CollectionAdmin
-from ..operations.crud import CRUDOperations
-from ..serializers.json import JSONSerializer
-from ..views.document_view import DocumentView
-from ..views.table_view import TableView
+if TYPE_CHECKING:
+    from ..core.engine import MongloEngine
 
 
-class FlaskAdapter:
-    """Flask adapter for Monglo.
-
-    Generates a Blueprint with REST endpoints for collections.
-
-    Example:
-        >>> from flask import Flask
-        >>> app = Flask(__name__)
-        >>> adapter = FlaskAdapter(engine)
-        >>> app.register_blueprint(adapter.blueprint)
+def create_flask_blueprint(
+    engine: MongloEngine,
+    name: str = "monglo_api",
+    url_prefix: str = "/api/admin"
+) -> Blueprint:
     """
-
-    def __init__(self, engine: MongloEngine, url_prefix: str = "/api/admin") -> None:
-        """Initialize Flask adapter.
-
-        Args:
-            engine: MongloEngine instance
-            url_prefix: URL prefix for routes
-        """
-        self.engine = engine
-        self.blueprint = Blueprint("monglo_admin", __name__, url_prefix=url_prefix)
-        self.serializer = JSONSerializer()
-
-        # Register routes
-        self._register_routes()
-
-    def _register_routes(self) -> None:
-        """Register all routes."""
-
-        # Index route
-        @self.blueprint.route("/", methods=["GET"])
-        async def list_collections():
-            """List all collections."""
-            collections = []
-            for name, admin in self.engine.registry._collections.items():
-                collections.append(
-                    {
-                        "name": name,
-                        "display_name": admin.display_name,
-                        "count": await admin.collection.count_documents({}),
-                    }
-                )
-            return jsonify({"collections": collections})
-
-        # Generate collection routes
-        for name, admin in self.engine.registry._collections.items():
-            self._add_collection_routes(name, admin)
-
-    def _add_collection_routes(self, collection_name: str, admin: CollectionAdmin) -> None:
-        """Add routes for a collection.
-
-        Args:
-            collection_name: Collection name
-            admin: CollectionAdmin instance
-        """
-        crud = CRUDOperations(admin)
-
-        # List
-        @self.blueprint.route(f"/{collection_name}", methods=["GET"])
-        async def list_docs():
-            page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 20))
-            search = request.args.get("search")
-
-            result = await crud.list(page=page, per_page=per_page, search=search)
-            result["items"] = [self._serialize_doc(d) for d in result["items"]]
-            return jsonify(result)
-
-        # Get
-        @self.blueprint.route(f"/{collection_name}/<id>", methods=["GET"])
-        async def get_doc(id: str):
-            try:
-                doc = await crud.get(id)
-                return jsonify(self._serialize_doc(doc))
-            except (ValueError, KeyError) as e:
-                return jsonify({"error": str(e)}), 404
-
-        # Create
-        @self.blueprint.route(f"/{collection_name}", methods=["POST"])
-        async def create_doc():
-            try:
-                data = request.get_json()
-                doc = await crud.create(data)
-                return jsonify(self._serialize_doc(doc)), 201
-            except ValueError as e:
-                return jsonify({"error": str(e)}), 400
-
-        # Update
-        @self.blueprint.route(f"/{collection_name}/<id>", methods=["PUT"])
-        async def update_doc(id: str):
-            try:
-                data = request.get_json()
-                doc = await crud.update(id, data)
-                return jsonify(self._serialize_doc(doc))
-            except ValueError as e:
-                return jsonify({"error": str(e)}), 400
-            except KeyError as e:
-                return jsonify({"error": str(e)}), 404
-
-        # Delete
-        @self.blueprint.route(f"/{collection_name}/<id>", methods=["DELETE"])
-        async def delete_doc(id: str):
-            try:
-                deleted = await crud.delete(id)
-                if not deleted:
-                    return jsonify({"error": "Not found"}), 404
-                return jsonify({"success": True, "id": id})
-            except ValueError as e:
-                return jsonify({"error": str(e)}), 400
-
-        # Config routes
-        @self.blueprint.route(f"/{collection_name}/config/table", methods=["GET"])
-        async def table_config():
-            table_view = TableView(admin)
-            return jsonify(table_view.render_config())
-
-        @self.blueprint.route(f"/{collection_name}/config/document", methods=["GET"])
-        async def doc_config():
-            doc_view = DocumentView(admin)
-            return jsonify(doc_view.render_config())
-
-    def _serialize_doc(self, doc: dict[str, Any]) -> dict[str, Any]:
-        """Serialize document."""
-        return self.serializer._serialize_value(doc)
-
-
-def create_flask_blueprint(engine: MongloEngine, url_prefix: str = "/api/admin") -> Blueprint:
-    """Create Flask Blueprint for Monglo.
-
+    Create Flask blueprint with ALL API routes automatically.
+    
+    This creates a complete REST API for all registered collections.
+    Developers NEVER need to define routes manually.
+    
     Args:
-        engine: MongloEngine instance
-        url_prefix: URL prefix
-
+        engine: Initialized MongloEngine instance
+        name: Blueprint name
+        url_prefix: URL prefix for API
+    
     Returns:
-        Configured Blueprint
-
+        Flask blueprint with all routes configured
+    
     Example:
-        >>> app = Flask(__name__)
-        >>> bp = create_flask_blueprint(engine)
-        >>> app.register_blueprint(bp)
+        >>> engine = MongloEngine(database=db, auto_discover=True)
+        >>> await engine.initialize()
+        >>> 
+        >>> # That's it - full API with all routes!
+        >>> app.register_blueprint(create_flask_blueprint(engine))
     """
-    adapter = FlaskAdapter(engine, url_prefix=url_prefix)
-    return adapter.blueprint
+    bp = Blueprint(name, __name__, url_prefix=url_prefix)
+    
+    # ==================== COLLECTIONS LIST ====================
+    
+    @bp.route("/", methods=["GET"])
+    async def list_collections():
+        """List all collections."""
+        collections = []
+        
+        for name, admin in engine.registry._collections.items():
+            count = await admin.collection.count_documents({})
+            collections.append({
+                "name": name,
+                "display_name": admin.display_name,
+                "count": count,
+                "relationships": len(admin.relationships)
+            })
+        
+        return jsonify({"collections": collections})
+    
+    # ==================== COLLECTION ROUTES (Auto-generated for each) ====================
+    
+    @bp.route("/<collection>", methods=["GET"])
+    async def list_documents(collection: str):
+        """List documents in collection with pagination, search, filters."""
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        # Get query params
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 20))
+        search = request.args.get("search", "")
+        sort_by = request.args.get("sort_by", "")
+        sort_dir = request.args.get("sort_dir", "asc")
+        
+        # Get collection admin
+        admin = engine.registry.get(collection)
+        
+        # Build sort
+        sort_list = None
+        if sort_by:
+            sort_list = [(sort_by, -1 if sort_dir == "desc" else 1)]
+        
+        # Get data
+        crud = CRUDOperations(admin)
+        data = await crud.list(
+            page=page,
+            per_page=per_page,
+            search=search if search else None,
+            sort=sort_list
+        )
+        
+        # Serialize
+        serializer = JSONSerializer()
+        serialized_items = [serializer._serialize_value(item) for item in data["items"]]
+        
+        return jsonify({
+            **data,
+            "items": serialized_items
+        })
+    
+    @bp.route("/<collection>/<id>", methods=["GET"])
+    async def get_document(collection: str, id: str):
+        """Get single document by ID."""
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        admin = engine.registry.get(collection)
+        crud = CRUDOperations(admin)
+        
+        try:
+            document = await crud.get(id)
+        except KeyError:
+            return jsonify({"error": "Document not found"}), 404
+        
+        # Serialize
+        serializer = JSONSerializer()
+        serialized = serializer._serialize_value(document)
+        
+        return jsonify({"document": serialized})
+    
+    @bp.route("/<collection>", methods=["POST"])
+    async def create_document(collection: str):
+        """Create new document."""
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        data = request.get_json()
+        
+        admin = engine.registry.get(collection)
+        crud = CRUDOperations(admin)
+        
+        created = await crud.create(data)
+        
+        # Serialize
+        serializer = JSONSerializer()
+        serialized = serializer._serialize_value(created)
+        
+        return jsonify({"success": True, "document": serialized}), 201
+    
+    @bp.route("/<collection>/<id>", methods=["PUT"])
+    async def update_document(collection: str, id: str):
+        """Update document."""
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        data = request.get_json()
+        
+        admin = engine.registry.get(collection)
+        crud = CRUDOperations(admin)
+        
+        try:
+            updated = await crud.update(id, data)
+        except KeyError:
+            return jsonify({"error": "Document not found"}), 404
+        
+        # Serialize
+        serializer = JSONSerializer()
+        serialized = serializer._serialize_value(updated)
+        
+        return jsonify({"success": True, "document": serialized})
+    
+    @bp.route("/<collection>/<id>", methods=["DELETE"])
+    async def delete_document(collection: str, id: str):
+        """Delete document."""
+        from ..operations.crud import CRUDOperations
+        
+        admin = engine.registry.get(collection)
+        crud = CRUDOperations(admin)
+        
+        try:
+            await crud.delete(id)
+        except KeyError:
+            return jsonify({"error": "Document not found"}), 404
+        
+        return jsonify({"success": True, "message": "Document deleted"})
+    
+    # ==================== VIEW CONFIGURATION ROUTES ====================
+    
+    @bp.route("/<collection>/config/table", methods=["GET"])
+    async def get_table_config(collection: str):
+        """Get table view configuration."""
+        from ..views.table_view import TableView
+        
+        admin = engine.registry.get(collection)
+        view = TableView(admin)
+        config = view.render_config()
+        
+        return jsonify({"config": config})
+    
+    @bp.route("/<collection>/config/document", methods=["GET"])
+    async def get_document_config(collection: str):
+        """Get document view configuration."""
+        from ..views.document_view import DocumentView
+        
+        admin = engine.registry.get(collection)
+        view = DocumentView(admin)
+        config = view.render_config()
+        
+        return jsonify({"config": config})
+    
+    @bp.route("/<collection>/relationships", methods=["GET"])
+    async def get_relationships(collection: str):
+        """Get collection relationships."""
+        admin = engine.registry.get(collection)
+        
+        relationships = [
+            {
+                "source_field": rel.source_field,
+                "target_collection": rel.target_collection,
+                "type": rel.type.value
+            }
+            for rel in admin.relationships
+        ]
+        
+        return jsonify({"relationships": relationships})
+    
+    return bp
