@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Relationships - {{ collection.name }} - Monglo Admin{% endblock %}
+
+{% block header_actions %}
+<button class="monglo-btn monglo-btn-secondary" onclick="window.history.back()">
+    Back
+</button>
+<button class="monglo-btn monglo-btn-secondary" onclick="refreshGraph()">
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+            d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" />
+    </svg>
+    Refresh
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="monglo-fade-in">
+    <!-- Graph Container -->
+    <div id="relationship-graph" style="min-height: 600px;"></div>
+
+    <!-- Legend -->
+    <div
+        style="margin-top: var(--spacing-xl); background: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: var(--spacing-md);">Relationship Types</h3>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                <div style="width: 20px; height: 3px; background: #10b981;"></div>
+                <span>One-to-One</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                <div style="width: 20px; height: 3px; background: #3b82f6;"></div>
+                <span>One-to-Many</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                <div style="width: 20px; height: 3px; background: #f59e0b;"></div>
+                <span>Many-to-Many</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                <div style="width: 20px; height: 3px; background: #8b5cf6;"></div>
+                <span>Embedded</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Relationship List -->
+    <div
+        style="margin-top: var(--spacing-xl); background: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: var(--spacing-md);">All Relationships</h3>
+        <div style="display: grid; gap: var(--spacing-md);">
+            {% for rel in relationships %}
+            <div
+                style="padding: var(--spacing-md); border: 1px solid var(--gray-200); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 600;">{{ rel.source_collection }}.{{ rel.source_field }}</div>
+                    <div style="font-size: 0.875rem; color: var(--gray-600); margin-top: var(--spacing-xs);">
+                        → {{ rel.target_collection }}.{{ rel.target_field }}
+                    </div>
+                </div>
+                <span
+                    class="monglo-badge {% if rel.type == 'one_to_one' %}monglo-badge-success{% elif rel.type == 'one_to_many' %}monglo-badge-info{% else %}monglo-badge-warning{% endif %}">
+                    {{ rel.type }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/relationship-graph.js"></script>
+<script>
+    // Initialize graph
+    const graphData = {
+        collections: {{ collections| tojson }},
+    relationships: { { relationships | tojson } }
+};
+
+    const graph = new MongloRelationshipGraph('relationship-graph', graphData);
+
+    function refreshGraph() {
+        window.location.reload();
+    }
+</script>
+{% endblock %}
