@@ -51,6 +51,12 @@ from .core.registry import CollectionAdmin, CollectionRegistry
 from .core.introspection import SchemaIntrospector
 from .core.query_builder import QueryBuilder
 
+# Operations exports
+from .operations.crud import CRUDOperations
+from .operations.pagination import PaginationHandler, PaginationStrategy
+from .operations.export import ExportOperations, ExportFormat, export_collection
+from .operations.aggregations import AggregationOperations
+
 __all__ = [
     # Metadata
     "__version__",
@@ -75,5 +81,13 @@ __all__ = [
     # Utilities
     "SchemaIntrospector",
     "QueryBuilder",
+    # Operations
+    "CRUDOperations",
+    "PaginationHandler",
+    "PaginationStrategy",
+    "ExportOperations",
+    "ExportFormat",
+    "export_collection",
+    "AggregationOperations",
 ]
 
