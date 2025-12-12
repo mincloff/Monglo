@@ -131,7 +131,7 @@ await engine.register_collection("users", config=config)
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/monglo.git
+git clone https://github.com/me-umar/monglo.git
 cd monglo
 
 # Install with dev dependencies

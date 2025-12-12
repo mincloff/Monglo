@@ -10,10 +10,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Mehar Umar", email = "contact@meharumar.codes"},
+    {name = "Mehar Umar", email = "contact@me-umar.codes"},
 ]
 maintainers = [
-    {name = "Mehar Umar", email = "contact@meharumar.codes"},
+    {name = "Mehar Umar", email = "contact@me-umar.codes"},
 ]
 keywords = [
     "mongodb",
@@ -91,10 +91,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/meharumar/monglo"
-Repository = "https://github.com/meharumar/monglo"
-Issues = "https://github.com/meharumar/monglo/issues"
-Changelog = "https://github.com/meharumar/monglo/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/me-umar/monglo"
+Repository = "https://github.com/me-umar/monglo"
+Issues = "https://github.com/me-umar/monglo/issues"
+Changelog = "https://github.com/me-umar/monglo/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["monglo"]

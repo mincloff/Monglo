@@ -55,5 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LICENSE file (MIT)
 - CHANGELOG file
 
-[Unreleased]: https://github.com/meharumar/monglo/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/meharumar/monglo/releases/tag/v0.1.0
+[Unreleased]: https://github.com/me-umar/monglo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/me-umar/monglo/releases/tag/v0.1.0
