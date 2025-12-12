@@ -6,10 +6,11 @@ Provides built-in UI rendering capabilities for Monglo admin interface.
 
 from pathlib import Path
 from typing import Any
-from fastapi import Request, APIRouter
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 # Get monglo_ui directory
 UI_DIR = Path(__file__).parent.parent.parent / "monglo_ui"
@@ -32,8 +33,9 @@ class UIHelper:
     
     def _register_filters(self):
         """Register custom Jinja2 filters for MongoDB types."""
-        from bson import ObjectId
         from datetime import datetime
+
+        from bson import ObjectId
         
         @self.templates.env.filters.register
         def format_objectid(value: Any) -> str:
@@ -51,7 +53,7 @@ class UIHelper:
                 try:
                     dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
                     return dt.strftime("%Y-%m-%d %H:%M:%S")
-                except:
+                except (ValueError, AttributeError):
                     return value
             return str(value) if value else ""
         
@@ -59,6 +61,7 @@ class UIHelper:
         def to_json(value: Any) -> str:
             """Convert value to JSON string."""
             import json
+
             from ..serializers.json import JSONSerializer
             serializer = JSONSerializer()
             serialized = serializer._serialize_value(value)

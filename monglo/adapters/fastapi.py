@@ -7,15 +7,15 @@ Auto-generates REST API endpoints for MongoDB collections.
 from __future__ import annotations
 
 from typing import Any
+
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import JSONResponse
 
 from ..core.engine import MongloEngine
 from ..core.registry import CollectionAdmin
 from ..operations.crud import CRUDOperations
 from ..serializers.json import JSONSerializer
-from ..views.table_view import TableView
 from ..views.document_view import DocumentView
+from ..views.table_view import TableView
 
 
 class FastAPIAdapter:
@@ -111,7 +111,7 @@ class FastAPIAdapter:
                 doc = await crud.get(id)
                 return self._serialize_doc(doc)
             except (ValueError, KeyError) as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                raise HTTPException(status_code=404, detail=str(e)) from e
         
         # Create document
         @self.router.post(f"/{collection_name}")
@@ -121,7 +121,7 @@ class FastAPIAdapter:
                 doc = await crud.create(data)
                 return self._serialize_doc(doc)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
         
         # Update document
         @self.router.put(f"/{collection_name}/{{id}}")
@@ -131,9 +131,9 @@ class FastAPIAdapter:
                 doc = await crud.update(id, data)
                 return self._serialize_doc(doc)
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
             except KeyError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                raise HTTPException(status_code=404, detail=str(e)) from e
         
         # Delete document
         @self.router.delete(f"/{collection_name}/{{id}}")
@@ -145,7 +145,7 @@ class FastAPIAdapter:
                     raise HTTPException(status_code=404, detail="Document not found")
                 return {"success": True, "id": id}
             except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+                raise HTTPException(status_code=400, detail=str(e)) from e
         
         # Table view config
         @self.router.get(f"/{collection_name}/config/table")

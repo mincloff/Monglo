@@ -6,6 +6,7 @@ highlighting, and score-based ranking.
 """
 
 from typing import Any
+
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 

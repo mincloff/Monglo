@@ -8,7 +8,8 @@ using multiple strategies: naming conventions, ObjectId fields, and DBRef.
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-from bson import ObjectId, DBRef
+
+from bson import DBRef, ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 

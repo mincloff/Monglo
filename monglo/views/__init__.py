@@ -1,8 +1,8 @@
 """Views package for Monglo."""
 
 from .base import BaseView, ViewType, ViewUtilities
-from .table_view import TableView
 from .document_view import DocumentView
+from .table_view import TableView
 
 __all__ = [
     "BaseView",

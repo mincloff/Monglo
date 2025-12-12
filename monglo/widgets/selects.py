@@ -5,6 +5,7 @@ Provides select dropdowns, multi-select, autocomplete, and radio buttons.
 """
 
 from typing import Any
+
 from .base import BaseWidget
 
 
@@ -22,7 +23,7 @@ class Select(BaseWidget):
         choices = self.options.get("choices", [])
         # Convert list of tuples to dict format
         if choices and isinstance(choices[0], (list, tuple)):
-            choices = [{"value": v, "label": l} for v, l in choices]
+            choices = [{"value": v, "label": label} for v, label in choices]
         
         return {
             "type": "select",
@@ -46,7 +47,7 @@ class MultiSelect(BaseWidget):
     def render_config(self) -> dict[str, Any]:
         choices = self.options.get("choices", [])
         if choices and isinstance(choices[0], (list, tuple)):
-            choices = [{"value": v, "label": l} for v, l in choices]
+            choices = [{"value": v, "label": label} for v, label in choices]
         
         return {
             "type": "multiselect",
@@ -91,7 +92,7 @@ class RadioButtons(BaseWidget):
     def render_config(self) -> dict[str, Any]:
         choices = self.options.get("choices", [])
         if choices and isinstance(choices[0], (list, tuple)):
-            choices = [{"value": v, "label": l} for v, l in choices]
+            choices = [{"value": v, "label": label} for v, label in choices]
         
         return {
             "type": "radio",

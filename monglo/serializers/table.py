@@ -6,8 +6,9 @@ Converts nested MongoDB documents into flat row data suitable for tables.
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any
-from datetime import datetime, date
+
 from bson import ObjectId
 
 

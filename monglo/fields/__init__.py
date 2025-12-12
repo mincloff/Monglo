@@ -1,8 +1,8 @@
 """Fields package for Monglo."""
 
 from .base import BaseField
-from .primitives import StringField, NumberField, BooleanField, DateField, DateTimeField
-from .references import ObjectIdField, DBRefField
+from .primitives import BooleanField, DateField, DateTimeField, NumberField, StringField
+from .references import DBRefField, ObjectIdField
 
 __all__ = [
     "BaseField",

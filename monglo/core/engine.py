@@ -8,11 +8,12 @@ schema introspection, relationship detection, and collection management.
 from __future__ import annotations
 
 from typing import Any, Literal
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from .config import CollectionConfig
-from .registry import CollectionAdmin, CollectionRegistry
 from .introspection import SchemaIntrospector
+from .registry import CollectionAdmin, CollectionRegistry
 from .relationships import RelationshipDetector
 
 

@@ -6,8 +6,8 @@ and their administrative interfaces.
 """
 
 from dataclasses import dataclass, field
-from typing import Any
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+
+from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from .config import CollectionConfig
 from .relationships import Relationship

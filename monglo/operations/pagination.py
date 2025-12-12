@@ -7,6 +7,7 @@ Provides offset-based and cursor-based pagination strategies.
 from __future__ import annotations
 
 from typing import Any, Literal
+
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorCollection
 

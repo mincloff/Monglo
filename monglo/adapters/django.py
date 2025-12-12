@@ -7,16 +7,15 @@ Provides ViewSet and URL patterns for MongoDB collections.
 from __future__ import annotations
 
 from typing import Any
+
 from django.http import JsonResponse
-from django.views import View
 from django.urls import path
+from django.views import View
 
 from ..core.engine import MongloEngine
 from ..core.registry import CollectionAdmin
 from ..operations.crud import CRUDOperations
 from ..serializers.json import JSONSerializer
-from ..views.table_view import TableView
-from ..views.document_view import DocumentView
 
 
 class CollectionView(View):

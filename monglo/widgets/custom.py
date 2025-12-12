@@ -4,7 +4,9 @@ Custom widget implementation support.
 Allows users to create their own custom widgets by extending BaseWidget.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
+
 from .base import BaseWidget
 
 

@@ -6,9 +6,10 @@ Handles nested documents and relationships while maintaining tree structure.
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any
-from datetime import datetime, date
-from bson import ObjectId, DBRef
+
+from bson import DBRef, ObjectId
 
 
 class DocumentSerializer:

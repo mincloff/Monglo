@@ -7,9 +7,10 @@ Handles serialization of MongoDB-specific types to JSON-compatible formats.
 from __future__ import annotations
 
 import json
+from datetime import date, datetime
 from typing import Any
-from datetime import datetime, date
-from bson import ObjectId, DBRef, Binary
+
+from bson import Binary, DBRef, ObjectId
 
 
 class JSONSerializer:

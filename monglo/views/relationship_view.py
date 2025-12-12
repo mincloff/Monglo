@@ -5,6 +5,7 @@ Provides D3.js-compatible graph data structures for relationship visualization.
 """
 
 from typing import Any
+
 from ..core.registry import CollectionAdmin
 from .base import BaseView
 
@@ -137,7 +138,7 @@ class RelationshipView(BaseView):
             })
         
         # Build edges from all relationships
-        for name, admin in all_collections.items():
+        for _name, admin in all_collections.items():
             for rel in admin.relationships:
                 # Create unique edge identifier
                 edge_id = f"{rel.source_collection}:{rel.source_field}:{rel.target_collection}"

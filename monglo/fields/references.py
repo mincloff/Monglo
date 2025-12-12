@@ -7,7 +7,8 @@ ObjectIdField and DBRefField for handling references.
 from __future__ import annotations
 
 from typing import Any
-from bson import ObjectId, DBRef
+
+from bson import DBRef, ObjectId
 from bson.errors import InvalidId
 
 from .base import BaseField
@@ -32,7 +33,7 @@ class ObjectIdField(BaseField):
             try:
                 return ObjectId(value)
             except InvalidId:
-                raise ValueError(f"Invalid ObjectId: {value}")
+                raise ValueError(f"Invalid ObjectId: {value}") from None
         
         raise ValueError("Value must be an ObjectId or valid ObjectId string")
     
@@ -84,7 +85,7 @@ class DBRefField(BaseField):
                 oid = ObjectId(value)
                 return DBRef(self.collection, oid, self.database)
             except InvalidId:
-                raise ValueError(f"Invalid ObjectId for DBRef: {value}")
+                raise ValueError(f"Invalid ObjectId for DBRef: {value}") from None
         
         raise ValueError("Value must be DBRef, ObjectId, or ObjectId string")
     

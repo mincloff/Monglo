@@ -5,38 +5,20 @@ All widget classes are available for import from monglo.widgets.
 """
 
 from .base import BaseWidget
+from .custom import ConditionalWidget, CustomWidget, WidgetGroup
+from .displays import Badge, CodeDisplay, Image, JSONDisplay, Label, Link, ProgressBar
 from .inputs import (
-    TextInput,
-    TextArea,
-    NumberInput,
-    EmailInput,
-    PasswordInput,
+    CheckboxInput,
+    ColorPicker,
     DatePicker,
     DateTimePicker,
-    CheckboxInput,
-    ColorPicker
+    EmailInput,
+    NumberInput,
+    PasswordInput,
+    TextArea,
+    TextInput,
 )
-from .selects import (
-    Select,
-    MultiSelect,
-    Autocomplete,
-    RadioButtons,
-    ReferenceSelect
-)
-from .displays import (
-    Label,
-    Badge,
-    Link,
-    Image,
-    JSONDisplay,
-    CodeDisplay,
-    ProgressBar
-)
-from .custom import (
-    CustomWidget,
-    WidgetGroup,
-    ConditionalWidget
-)
+from .selects import Autocomplete, MultiSelect, RadioButtons, ReferenceSelect, Select
 
 __all__ = [
     # Base

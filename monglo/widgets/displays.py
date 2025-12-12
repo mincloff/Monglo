@@ -5,6 +5,7 @@ Provides labels, badges, links, and other display-only components.
 """
 
 from typing import Any
+
 from .base import BaseWidget
 
 

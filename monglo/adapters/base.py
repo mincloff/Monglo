@@ -6,6 +6,7 @@ Defines the contract that all framework adapters must implement.
 
 from abc import ABC, abstractmethod
 from typing import Any
+
 from ..core.engine import MongloEngine
 
 

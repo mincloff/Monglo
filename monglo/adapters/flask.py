@@ -7,14 +7,15 @@ Generates Blueprint with admin routes for MongoDB collections.
 from __future__ import annotations
 
 from typing import Any
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
 
 from ..core.engine import MongloEngine
 from ..core.registry import CollectionAdmin
 from ..operations.crud import CRUDOperations
 from ..serializers.json import JSONSerializer
-from ..views.table_view import TableView
 from ..views.document_view import DocumentView
+from ..views.table_view import TableView
 
 
 class FlaskAdapter:

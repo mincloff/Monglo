@@ -5,6 +5,7 @@ Provides aggregation pipeline builders and common aggregation patterns.
 """
 
 from typing import Any
+
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 

@@ -6,8 +6,8 @@ String, Number, Boolean, Date fields with validation.
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from typing import Any
-from datetime import datetime, date
 
 from .base import BaseField
 
@@ -94,7 +94,7 @@ class NumberField(BaseField):
             try:
                 value = float(value)
             except (ValueError, TypeError):
-                raise ValueError("Value must be a number")
+                raise ValueError("Value must be a number") from None
         
         if self.min_value is not None and value < self.min_value:
             raise ValueError(f"Value must be at least {self.min_value}")

@@ -5,10 +5,11 @@ This module provides automatic schema discovery by sampling and analyzing
 documents to infer field types and structure.
 """
 
-from typing import Any
 from collections import defaultdict
-from datetime import datetime, date
-from bson import ObjectId, DBRef
+from datetime import date, datetime
+from typing import Any
+
+from bson import DBRef, ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 

@@ -8,6 +8,7 @@ All configuration is type-safe and validated at runtime.
 from __future__ import annotations
 
 from typing import Any, Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -173,7 +174,7 @@ class CollectionConfig(BaseModel):
     )
     
     @classmethod
-    def from_schema(cls, schema: dict[str, Any]) -> "CollectionConfig":
+    def from_schema(cls, schema: dict[str, Any]) -> CollectionConfig:
         """Create configuration from an introspected schema.
         
         This factory method generates sensible defaults based on the

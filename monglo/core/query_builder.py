@@ -5,9 +5,11 @@ This module provides helpers for constructing MongoDB queries from
 filter specifications, search terms, and sort orders.
 """
 
-from typing import Any
 import re
-from bson import ObjectId, errors as bson_errors
+from typing import Any
+
+from bson import ObjectId
+from bson import errors as bson_errors
 
 
 class QueryBuilder:
