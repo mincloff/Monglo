@@ -23,6 +23,7 @@ def setup_ui(
     title: str = "Monglo Admin",
     logo: str | None = None,
     brand_color: str = "#10b981",
+    auth_dependency: Any | None = None,  # NEW: Optional auth check
 ) -> None:
     """
     Setup Monglo UI on a FastAPI application.
@@ -37,6 +38,8 @@ def setup_ui(
         title: Page title
         logo: Optional logo URL
         brand_color: Brand color in hex
+        auth_dependency: Optional callable for authentication
+                        Should raise HTTPException(401) if not authenticated
     """
     from fastapi.staticfiles import StaticFiles
     
@@ -44,7 +47,7 @@ def setup_ui(
     app.mount(f"{prefix}/static", StaticFiles(directory=str(STATIC_DIR)), name="admin_static")
     
     # Include the UI router
-    router = create_ui_router(engine, prefix, title, logo, brand_color)
+    router = create_ui_router(engine, prefix, title, logo, brand_color, auth_dependency)
     app.include_router(router)
 
 
@@ -54,16 +57,52 @@ def create_ui_router(
     title: str = "Monglo Admin",
     logo: str | None = None,
     brand_color: str = "#10b981",  # Green
+    auth_dependency: Any | None = None,  # NEW: Pass through from setup_ui
 ) -> APIRouter:
-    router = APIRouter(prefix=prefix, tags=["Monglo Admin UI"])
+    from fastapi import Depends
+    
+    # Exclude admin routes from OpenAPI schema
+    router = APIRouter(prefix=prefix, tags=["Monglo Admin UI"], include_in_schema=False)
     
     # Setup Jinja2 templates with all filters
     templates = _setup_templates()
+    
+    # Helper to conditionally apply auth dependency
+    def get_dependencies():
+        if auth_dependency:
+            return [Depends(auth_dependency)]
+        return []
+    
+    # Built-in login route (if auth is enabled)
+    if auth_dependency:
+        @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
+        async def login_page(request: Request, error: str = None):
+            """Built-in login page"""
+            return templates.TemplateResponse("login.html", {
+                "request": request,
+                "title": title,
+                "logo": logo,
+                "brand_color": brand_color,
+                "prefix": prefix,
+                "error": error
+            })
+        
+        @router.get("/logout", include_in_schema=False)
+        async def logout_route(request: Request):
+            """Built-in logout route"""
+            # Developer should implement POST /login to handle login
+            # This just provides a logout endpoint
+            response = RedirectResponse(url=f"{prefix}/login", status_code=303)
+            # Clear common cookie names (developer may need custom logout logic)
+            response.delete_cookie("session")
+            response.delete_cookie("token")
+            response.delete_cookie("monglo_session")
+            return response
 
     
     # ==================== UI ROUTES ====================
     
-    @router.get("/", response_class=HTMLResponse, name="admin_home")
+    @router.get("/", response_class=HTMLResponse, name="admin_home", dependencies=get_dependencies())
     async def admin_home(request: Request):
         collections = []
         
@@ -86,7 +125,7 @@ def create_ui_router(
             "prefix": prefix
         })
     
-    @router.get("/relationships", response_class=HTMLResponse, name="relationship_graph")
+    @router.get("/relationships", response_class=HTMLResponse, name="relationship_graph", dependencies=get_dependencies())
     async def relationship_graph(request: Request):
         """Display relationship graph visualization"""
         # Collect all relationships across collections
@@ -113,7 +152,7 @@ def create_ui_router(
             "prefix": prefix
         })
     
-    @router.get("/{collection}", response_class=HTMLResponse, name="table_view")
+    @router.get("/{collection}", response_class=HTMLResponse, name="table_view", dependencies=get_dependencies())
     async def table_view(
         request: Request,
         collection: str,
@@ -158,7 +197,7 @@ def create_ui_router(
             "prefix": prefix
         })
     
-    @router.get("/{collection}/document/{id}", response_class=HTMLResponse, name="document_view")
+    @router.get("/{collection}/document/{id}", response_class=HTMLResponse, name="document_view", dependencies=get_dependencies())
     async def document_view(
         request: Request,
         collection: str,
@@ -203,7 +242,7 @@ def create_ui_router(
     
     # ==================== API ROUTES (for UI interactions) ====================
     
-    @router.get("/{collection}/{id}/json", name="get_document_json")
+    @router.get("/{collection}/{id}/json", name="get_document_json", dependencies=get_dependencies())
     async def get_document_json(collection: str, id: str):
         from ..operations.crud import CRUDOperations
         from ..serializers.json import JSONSerializer
@@ -219,7 +258,7 @@ def create_ui_router(
         
         return {" success": True, "document": serialized}
     
-    @router.get("/{collection}/list", name="list_documents_json")
+    @router.get("/{collection}/list", name="list_documents_json", dependencies=get_dependencies())
     async def list_documents_json(
         collection: str,
         per_page: int = 20,
@@ -273,7 +312,7 @@ def create_ui_router(
             "per_page": result["per_page"]
         }
     
-    @router.delete("/{collection}/{id}", name="delete_document")
+    @router.delete("/{collection}/{id}", name="delete_document", dependencies=get_dependencies())
     async def delete_document(collection: str, id: str):
         from ..operations.crud import CRUDOperations
         
@@ -299,7 +338,7 @@ def create_ui_router(
         
         return {"success": True, "document": serialized}
     
-    @router.post("/{collection}", name="create_document")
+    @router.post("/{collection}", name="create_document", dependencies=get_dependencies())
     async def create_document(collection: str, data: dict):
         from ..operations.crud import CRUDOperations
         from ..serializers.json import JSONSerializer

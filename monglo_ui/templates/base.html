@@ -4,17 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Monglo Admin{% endblock %}</title>
-
-    <!-- CRITICAL: Apply dark mode BEFORE rendering to prevent flash -->
-    <script>
-        (function () {
-            const savedMode = localStorage.getItem('monglo-dark-mode');
-            if (savedMode === 'dark') {
-                document.body.classList.add('dark-mode');
-            }
-        })();
-    </script>
+    <title>{{ title|default('Monglo Admin') }}</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,7 +20,18 @@
 </head>
 
 <body>
+    <!-- CRITICAL: Apply dark mode immediately -->
+    <script>
+        (function () {
+            const savedMode = localStorage.getItem('monglo-dark-mode');
+            if (savedMode === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
+
     <div class="monglo-admin">
+
         <!-- Sidebar -->
         <aside class="monglo-sidebar">
             <div class="monglo-sidebar-header">
@@ -57,6 +58,8 @@
                 </a>
                 {% endfor %}
 
+                <div class="monglo-sidebar-divider"></div>
+
                 <a href="{{ prefix }}/relationships" class="monglo-collection-item">
                     <i class="fas fa-project-diagram"></i>
                     <span>Relationships</span>
@@ -65,26 +68,31 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content Area -->
         <main class="monglo-main">
-            <!-- Header -->
-            <header class="monglo-header">
-                <div class="monglo-breadcrumb">
-                    {% if current_collection %}
-                    <i class="fas fa-table"></i>
-                    <span class="active">{{ current_collection }}</span>
-                    {% else %}
-                    <i class="fas fa-home"></i>
-                    <span class="active">Dashboard</span>
-                    {% endif %}
+            <!-- Top Header Bar with Logout -->
+            <header class="monglo-topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h1>
                 </div>
-
-                <div class="monglo-actions">
+                <div class="topbar-right">
+                    <!-- Action buttons from child templates (Add New, etc.) -->
                     {% block header_actions %}{% endblock %}
+
+                    <button class="topbar-btn" onclick="toggleDarkMode()" title="Toggle dark mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <a href="{{ prefix }}/logout" class="topbar-logout" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
                 </div>
             </header>
 
-            <!-- Content -->
+            <!-- Page Content -->
             <div class="monglo-content">
                 {% block content %}{% endblock %}
             </div>
@@ -94,13 +102,28 @@
     <!-- Scripts -->
     <script>
         // Set global prefix for JavaScript
-        window.MONGLO_PREFIX = '{{ prefix|default("/admin") }}';
+        window.MONGLO_PREFIX = "{{ prefix|default('/admin') }}";
+
+        // Sidebar Toggle
+        function toggleSidebar() {
+            document.querySelector('.monglo-admin').classList.toggle('sidebar-collapsed');
+        }
+
+        // Simple global dark mode toggle for topbar button
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('monglo-dark-mode', isDark ? 'dark' : 'light');
+
+            // Update button icon if present
+            const topbarBtn = document.querySelector('.topbar-btn i');
+            if (topbarBtn) {
+                topbarBtn.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
     </script>
-    <script src="{{ prefix|default('/admin') }}/static/js/dark-mode.js"></script>
-    <script src="{{ prefix|default('/admin') }}/static/js/sidebar-resize.js"></script>
+
     <script src="{{ prefix|default('/admin') }}/static/js/modals.js"></script>
-    <script src="{{ prefix|default('/admin') }}/static/js/table-view.js"></script>
-    <script src="{{ prefix|default('/admin') }}/static/js/document-view.js"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 
