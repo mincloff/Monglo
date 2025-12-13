@@ -16,7 +16,7 @@ pip install monglo motor fastapi  # or flask, or django
 from motor.motor_asyncio import AsyncIOMotorClient
 
 client = AsyncIOMotorClient("mongodb://localhost:27017")
-db = client.your_database
+db = client.mydb
 ```
 
 ### 2. Initialize Monglo

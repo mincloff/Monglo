@@ -225,12 +225,11 @@ engine = MongloEngine(
 
 ## 🎓 Examples
 
-Check out [`examples/`](examples/) for complete working examples:
+Check out [`examples/`](examples/) for complete working examples with **FastAPI** (Flask and Django support coming in future versions):
 
-- **[simple_fastapi_example](examples/simple_fastapi_example/)** - Minimal FastAPI setup (10 lines)
-- **[flask_minimal](examples/flask_minimal/)** - Minimal Flask setup
-- **[fastapi_example](examples/fastapi_example/)** - Full-featured FastAPI app
-- **[relationships_demo](examples/relationships_demo/)** - Complex relationships example
+- **[basic_example](examples/fastapi_example/basic_example/)** - Minimal FastAPI setup (10 lines)
+- **[advanced_example](examples/fastapi_example/advanced_example/)** - Full-featured FastAPI app with relationships
+- **[advanced_auth_example](examples/fastapi_example/advanced_auth_example/)** - Authentication and authorization demo
 
 ---
 
@@ -240,7 +239,7 @@ Check out [`examples/`](examples/) for complete working examples:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/monglo.git
+git clone https://github.com/me-umar/monglo.git
 cd monglo
 
 # Create virtual environment
@@ -268,8 +267,8 @@ mypy monglo/ --strict
 ### Run Examples
 
 ```bash
-cd examples/simple_fastapi_example
-uvicorn app:app --reload
+cd examples/fastapi_example/basic_example
+python app.py
 ```
 
 ---

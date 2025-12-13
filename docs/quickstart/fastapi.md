@@ -11,7 +11,7 @@ Get your MongoDB admin interface running in under 5 minutes with FastAPI.
 pip install monglo[fastapi]
 
 # Or from source
-git clone https://github.com/yourusername/monglo
+git clone https://github.com/me-umar/monglo
 cd monglo
 pip install -e ".[fastapi]"
 ```

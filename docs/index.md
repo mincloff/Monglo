@@ -281,6 +281,6 @@ MIT - See [LICENSE](../LICENSE)
 ## Links
 
 - **Documentation**: https://monglo.readthedocs.io
-- **GitHub**: https://github.com/yourusername/monglo
+- **GitHub**: https://github.com/me-umar/monglo
 - **PyPI**: https://pypi.org/project/monglo
-- **Issues**: https://github.com/yourusername/monglo/issues
+- **Issues**: https://github.com/me-umar/monglo/issues
