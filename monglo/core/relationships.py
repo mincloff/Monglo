@@ -150,7 +150,67 @@ class RelationshipDetector:
                         type=RelationshipType.ONE_TO_ONE,
                     )
                 )
+            
+            # Strategy 5: Nested arrays with embedded documents (e.g., order.items[].product_id)
+            elif isinstance(value, list) and value and isinstance(value[0], dict):
+                # Look for *_id fields in embedded documents
+                nested_rels = self._detect_nested_relationships(
+                    collection_name, field, value[0]
+                )
+                relationships.extend(nested_rels)
+            
+            # Strategy 6: Nested objects with relationships
+            elif isinstance(value, dict) and not isinstance(value, (DBRef,)):
+                nested_rels = self._detect_nested_relationships(
+                    collection_name, field, value
+                )
+                relationships.extend(nested_rels)
 
+        return relationships
+    
+    def _detect_nested_relationships(
+        self, collection_name: str, parent_field: str, nested_doc: dict[str, Any]
+    ) -> list[Relationship]:
+        """Detect relationships in nested/embedded documents."""
+        relationships: list[Relationship] = []
+        
+        for nested_field, nested_value in nested_doc.items():
+            # Check for *_id pattern in nested fields
+            if nested_field.endswith("_id") or nested_field.endswith("_ids"):
+                target = self._guess_collection_from_field(nested_field)
+                if target in self._collection_cache:
+                    # Create relationship with nested path
+                    nested_path = f"{parent_field}.{nested_field}"
+                    rel_type = (
+                        RelationshipType.ONE_TO_MANY
+                        if nested_field.endswith("_ids")
+                        else RelationshipType.ONE_TO_ONE
+                    )
+                    relationships.append(
+                        Relationship(
+                            source_collection=collection_name,
+                            source_field=nested_path,
+                            target_collection=target,
+                            target_field="_id",
+                            type=rel_type,
+                        )
+                    )
+            # Check for ObjectId values
+            elif isinstance(nested_value, ObjectId):
+                if not nested_field.endswith("_id"):
+                    target = self._pluralize(nested_field)
+                    if target in self._collection_cache:
+                        nested_path = f"{parent_field}.{nested_field}"
+                        relationships.append(
+                            Relationship(
+                                source_collection=collection_name,
+                                source_field=nested_path,
+                                target_collection=target,
+                                target_field="_id",
+                                type=RelationshipType.ONE_TO_ONE,
+                            )
+                        )
+        
         return relationships
 
     def _guess_collection_from_field(self, field: str) -> str:

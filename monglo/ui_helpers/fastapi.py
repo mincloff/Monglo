@@ -82,7 +82,8 @@ def create_ui_router(
             "logo": logo,
             "brand_color": brand_color,
             "collections": collections,
-            "current_collection": None
+            "current_collection": None,
+            "prefix": prefix
         })
     
     @router.get("/{collection}", response_class=HTMLResponse, name="table_view")
@@ -126,7 +127,8 @@ def create_ui_router(
             "config": config,
             "data": data,
             "collections": collections,
-            "current_collection": collection
+            "current_collection": collection,
+            "prefix": prefix
         })
     
     @router.get("/{collection}/document/{id}", response_class=HTMLResponse, name="document_view")
@@ -167,10 +169,82 @@ def create_ui_router(
             "config": config,
             "relationships": admin.relationships,
             "collections": collections,
-            "current_collection": collection
+            "current_collection": collection,
+            "prefix": prefix
         })
     
+    
     # ==================== API ROUTES (for UI interactions) ====================
+    
+    @router.get("/{collection}/{id}/json", name="get_document_json")
+    async def get_document_json(collection: str, id: str):
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        admin = engine.registry.get(collection)
+        crud = CRUDOperations(admin)
+        
+        document = await crud.get(id)
+        
+        # Serialize for JSON response
+        serializer = JSONSerializer()
+        serialized = serializer._serialize_value(document)
+        
+        return {" success": True, "document": serialized}
+    
+    @router.get("/{collection}/list", name="list_documents_json")
+    async def list_documents_json(
+        collection: str,
+        per_page: int = 20,
+        page: int = 1,
+        search: str = "",
+        sort: str = ""
+    ):
+        from ..operations.crud import CRUDOperations
+        from ..serializers.json import JSONSerializer
+        
+        try:
+            admin = engine.registry.get(collection)
+        except KeyError:
+            # Collection doesn't exist, return empty result
+            return {
+                "success": False,
+                "items": [],
+                "total": 0,
+                "page": 1,
+                "pages": 0,
+                "per_page": per_page,
+                "error": f"Collection '{collection}' not found"
+            }
+        
+        crud = CRUDOperations(admin)
+        
+        sort_list = None
+        if sort:
+            parts = sort.split(":")
+            if len(parts) == 2:
+                field, direction = parts
+                sort_list = [(field, -1 if direction == "desc" else 1)]
+        
+        result = await crud.list(
+            page=page,
+            per_page=per_page,
+            search=search if search else None,
+            sort=sort_list
+        )
+        
+        # Serialize items
+        serializer = JSONSerializer()
+        items = [serializer._serialize_value(item) for item in result["items"]]
+        
+        return {
+            "success": True,
+            "items": items,
+            "total": result["total"],
+            "page": result["page"],
+            "pages": result["pages"],
+            "per_page": result["per_page"]
+        }
     
     @router.delete("/{collection}/{id}", name="delete_document")
     async def delete_document(collection: str, id: str):

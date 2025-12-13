@@ -126,6 +126,7 @@
 
 <script>
     const collection = '{{ collection.name }}';
+    const prefix = '{{ prefix }}';
     let currentPage = {{ data.page }};
     let currentSearch = '';
     let currentSort = '';
@@ -170,15 +171,21 @@
     }
 
     function viewDocument(id) {
-        window.location.href = `/admin/${collection}/document/${id}`;
+        window.location.href = `${prefix}/${collection}/document/${id}`;
     }
 
     function deleteDocument(id) {
+        event.stopPropagation();
         if (confirm('Are you sure you want to delete this document?')) {
-            fetch(`/api/admin/${collection}/${id}`, { method: 'DELETE' })
-                .then(response => response.json())
-                .then(() => reloadTable())
-                .catch(err => alert('Error deleting document'));
+            fetch(`${prefix}/${collection}/${id}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        reloadTable();
+                    } else {
+                        alert('Error deleting document');
+                    }
+                })
+                .catch(err => alert('Error deleting document: ' + err.message));
         }
     }
 
@@ -224,7 +231,7 @@
         const selected = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
         if (confirm(`Delete ${selected.length} documents?`)) {
             Promise.all(selected.map(id =>
-                fetch(`/api/admin/${collection}/${id}`, { method: 'DELETE' })
+                fetch(`${prefix}/${collection}/${id}`, { method: 'DELETE' })
             ))
                 .then(() => reloadTable())
                 .catch(err => alert('Error deleting documents'));

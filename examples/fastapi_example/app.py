@@ -23,7 +23,7 @@ async def startup():
     #initialize monglo engine
     await engine.initialize()
     #setup monglo ui
-    setup_ui(app, engine)
+    setup_ui(app, title="Test", engine=engine)
     #setup monglo router
     app.include_router(create_fastapi_router(engine, prefix="/api"))
     

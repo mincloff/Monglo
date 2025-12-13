@@ -182,3 +182,26 @@ document.head.appendChild(style);
 
 // Export for use in templates
 window.MongloTableView = MongloTableView;
+
+// Global delete function
+window.deleteDocument = async function (id) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+
+    const collection = window.location.pathname.split('/')[2];
+
+    try {
+        const response = await fetch(`/admin/${collection}/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.text();
+            alert('Error deleting document: ' + error);
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error: ' + error.message);
+    }
+};

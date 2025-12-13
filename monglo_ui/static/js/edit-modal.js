@@ -17,13 +17,18 @@ class EditModal {
 
     // Fetch document data
     try {
-      const response = await fetch(`/api/admin/${collection}/${documentId}`);
-      const result = await response.json();
-      this.currentDocument = result.document || result;
+      const response = await fetch(`/admin/${collection}/document/${documentId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const html = await response.text();
 
-      this.createModal();
-      this.populateForm();
+      // Parse document from response or fetch via API
+      // For now, redirect to document view
+      window.location.href = `/admin/${collection}/document/${documentId}`;
+      return;
     } catch (error) {
+      console.error('Error loading document:', error);
       alert('Error loading document: ' + error.message);
     }
   }

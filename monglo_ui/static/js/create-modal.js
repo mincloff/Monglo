@@ -4,73 +4,73 @@
  */
 
 class CreateModal {
-    constructor() {
-        this.modal = null;
-        this.currentCollection = null;
-        this.detectedFields = null;
+  constructor() {
+    this.modal = null;
+    this.currentCollection = null;
+    this.detectedFields = null;
+  }
+
+  async open(collection) {
+    this.currentCollection = collection;
+
+    // Detect fields from existing documents
+    await this.detectFields();
+
+    this.createModal();
+    this.populateForm();
+  }
+
+  async detectFields() {
+    try {
+      // Fetch sample documents to detect common fields
+      const response = await fetch(`/admin/${this.currentCollection}?per_page=5`);
+      const result = await response.json();
+      const items = result.items || [];
+
+      if (items.length > 0) {
+        // Merge all field names from samples
+        const fieldSet = new Set();
+        items.forEach(item => {
+          Object.keys(item).forEach(key => {
+            if (key !== '_id') fieldSet.add(key);
+          });
+        });
+
+        // Detect types from first document
+        this.detectedFields = {};
+        const sample = items[0];
+        fieldSet.forEach(field => {
+          this.detectedFields[field] = this.detectFieldType(sample[field]);
+        });
+      } else {
+        // No documents exist, start with empty fields
+        this.detectedFields = {};
+      }
+    } catch (error) {
+      console.error('Error detecting fields:', error);
+      this.detectedFields = {};
     }
+  }
 
-    async open(collection) {
-        this.currentCollection = collection;
-
-        // Detect fields from existing documents
-        await this.detectFields();
-
-        this.createModal();
-        this.populateForm();
+  detectFieldType(value) {
+    if (value === null || value === undefined) return 'text';
+    if (typeof value === 'boolean') return 'checkbox';
+    if (typeof value === 'number') return 'number';
+    if (typeof value === 'object') return 'json';
+    if (typeof value === 'string' && value.includes('T') && !isNaN(Date.parse(value))) {
+      return 'datetime-local';
     }
+    return 'text';
+  }
 
-    async detectFields() {
-        try {
-            // Fetch sample documents to detect common fields
-            const response = await fetch(`/api/admin/${this.currentCollection}?per_page=5`);
-            const result = await response.json();
-            const items = result.items || [];
+  createModal() {
+    // Remove existing modal if any
+    const existing = document.getElementById('create-modal');
+    if (existing) existing.remove();
 
-            if (items.length > 0) {
-                // Merge all field names from samples
-                const fieldSet = new Set();
-                items.forEach(item => {
-                    Object.keys(item).forEach(key => {
-                        if (key !== '_id') fieldSet.add(key);
-                    });
-                });
-
-                // Detect types from first document
-                this.detectedFields = {};
-                const sample = items[0];
-                fieldSet.forEach(field => {
-                    this.detectedFields[field] = this.detectFieldType(sample[field]);
-                });
-            } else {
-                // No documents exist, start with empty fields
-                this.detectedFields = {};
-            }
-        } catch (error) {
-            console.error('Error detecting fields:', error);
-            this.detectedFields = {};
-        }
-    }
-
-    detectFieldType(value) {
-        if (value === null || value === undefined) return 'text';
-        if (typeof value === 'boolean') return 'checkbox';
-        if (typeof value === 'number') return 'number';
-        if (typeof value === 'object') return 'json';
-        if (typeof value === 'string' && value.includes('T') && !isNaN(Date.parse(value))) {
-            return 'datetime-local';
-        }
-        return 'text';
-    }
-
-    createModal() {
-        // Remove existing modal if any
-        const existing = document.getElementById('create-modal');
-        if (existing) existing.remove();
-
-        const modal = document.createElement('div');
-        modal.id = 'create-modal';
-        modal.style.cssText = `
+    const modal = document.createElement('div');
+    modal.id = 'create-modal';
+    modal.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
@@ -84,7 +84,7 @@ class CreateModal {
       animation: fadeIn 0.2s ease-out;
     `;
 
-        modal.innerHTML = `
+    modal.innerHTML = `
       <div style="
         background: var(--bg-primary);
         border-radius: var(--radius-lg);
@@ -140,38 +140,38 @@ class CreateModal {
       </div>
     `;
 
-        document.body.appendChild(modal);
-        this.modal = modal;
+    document.body.appendChild(modal);
+    this.modal = modal;
 
-        // Close on backdrop click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.close();
-        });
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) this.close();
+    });
+  }
+
+  populateForm() {
+    const container = document.getElementById('create-form-container');
+    if (!container) return;
+
+    let formHtml = '';
+
+    if (Object.keys(this.detectedFields).length > 0) {
+      formHtml += '<p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-lg);">Fill in the fields below. Detected from existing documents.</p>';
+
+      for (const [key, type] of Object.entries(this.detectedFields)) {
+        formHtml += this.generateField(key, '', type);
+      }
+    } else {
+      formHtml += '<p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-lg);">No existing documents found. Click "Add Field" to add custom fields.</p>';
     }
 
-    populateForm() {
-        const container = document.getElementById('create-form-container');
-        if (!container) return;
+    container.innerHTML = formHtml;
+  }
 
-        let formHtml = '';
+  generateField(key, value, type, isCustom = false) {
+    const checked = type === 'checkbox' && value ? 'checked' : '';
 
-        if (Object.keys(this.detectedFields).length > 0) {
-            formHtml += '<p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-lg);">Fill in the fields below. Detected from existing documents.</p>';
-
-            for (const [key, type] of Object.entries(this.detectedFields)) {
-                formHtml += this.generateField(key, '', type);
-            }
-        } else {
-            formHtml += '<p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-lg);">No existing documents found. Click "Add Field" to add custom fields.</p>';
-        }
-
-        container.innerHTML = formHtml;
-    }
-
-    generateField(key, value, type, isCustom = false) {
-        const checked = type === 'checkbox' && value ? 'checked' : '';
-
-        return `
+    return `
       <div style="margin-bottom: var(--spacing-lg);" class="field-group">
         <div style="display: flex; gap: var(--spacing-sm); align-items: center; margin-bottom: var(--spacing-sm);">
           ${isCustom ? `
@@ -222,82 +222,82 @@ class CreateModal {
         `}
       </div>
     `;
-    }
+  }
 
-    addCustomField() {
-        const container = document.getElementById('create-form-container');
-        if (!container) return;
+  addCustomField() {
+    const container = document.getElementById('create-form-container');
+    if (!container) return;
 
-        const fieldHtml = this.generateField('new_field', '', 'text', true);
-        const div = document.createElement('div');
-        div.innerHTML = fieldHtml;
-        container.appendChild(div.firstElementChild);
-    }
+    const fieldHtml = this.generateField('new_field', '', 'text', true);
+    const div = document.createElement('div');
+    div.innerHTML = fieldHtml;
+    container.appendChild(div.firstElementChild);
+  }
 
-    async save() {
-        const container = document.getElementById('create-form-container');
-        if (!container) return;
+  async save() {
+    const container = document.getElementById('create-form-container');
+    if (!container) return;
 
-        // Collect form data
-        const formData = {};
+    // Collect form data
+    const formData = {};
 
-        // Process field groups
-        const fieldGroups = container.querySelectorAll('.field-group');
-        fieldGroups.forEach(group => {
-            const nameInput = group.querySelector('.field-name');
-            const fieldName = nameInput ? nameInput.value.trim() : null;
+    // Process field groups
+    const fieldGroups = container.querySelectorAll('.field-group');
+    fieldGroups.forEach(group => {
+      const nameInput = group.querySelector('.field-name');
+      const fieldName = nameInput ? nameInput.value.trim() : null;
 
-            const input = group.querySelector('input[name], textarea[name]');
-            if (!input) return;
+      const input = group.querySelector('input[name], textarea[name]');
+      if (!input) return;
 
-            const key = fieldName || input.name;
-            if (!key) return;
+      const key = fieldName || input.name;
+      if (!key) return;
 
-            let value = input.type === 'checkbox' ? input.checked : input.value;
+      let value = input.type === 'checkbox' ? input.checked : input.value;
 
-            // Skip empty values
-            if (value === '' || value === null) return;
+      // Skip empty values
+      if (value === '' || value === null) return;
 
-            // Try to parse JSON fields
-            if (input.tagName === 'TEXTAREA') {
-                try {
-                    value = JSON.parse(value);
-                } catch (e) {
-                    // Keep as string if not valid JSON
-                }
-            } else if (input.type === 'number') {
-                value = parseFloat(value);
-            }
-
-            formData[key] = value;
-        });
-
-        // Create document
+      // Try to parse JSON fields
+      if (input.tagName === 'TEXTAREA') {
         try {
-            const response = await fetch(`/api/admin/${this.currentCollection}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-
-            if (response.ok) {
-                this.close();
-                window.location.reload(); // Reload to show new document
-            } else {
-                const error = await response.json();
-                alert('Error creating document: ' + (error.message || 'Unknown error'));
-            }
-        } catch (error) {
-            alert('Error: ' + error.message);
+          value = JSON.parse(value);
+        } catch (e) {
+          // Keep as string if not valid JSON
         }
-    }
+      } else if (input.type === 'number') {
+        value = parseFloat(value);
+      }
 
-    close() {
-        if (this.modal) {
-            this.modal.remove();
-            this.modal = null;
-        }
+      formData[key] = value;
+    });
+
+    // Create document
+    try {
+      const response = await fetch(`/admin/${this.currentCollection}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        this.close();
+        window.location.reload(); // Reload to show new document
+      } else {
+        const error = await response.json();
+        alert('Error creating document: ' + (error.message || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
     }
+  }
+
+  close() {
+    if (this.modal) {
+      this.modal.remove();
+      this.modal = null;
+    }
+  }
 }
 
 // Global instance
@@ -305,6 +305,6 @@ window.createModal = new CreateModal();
 
 // Override the global createDocument function
 window.createDocument = function () {
-    const collection = window.location.pathname.split('/')[2];
-    window.createModal.open(collection);
+  const collection = window.location.pathname.split('/')[2];
+  window.createModal.open(collection);
 };
