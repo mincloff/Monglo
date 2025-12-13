@@ -47,7 +47,7 @@ class RelationshipDetector:
     async def detect(
         self,
         collection_name: str,
-        config: Any,  # Will be CollectionConfig, avoiding circular import
+        config: Any, 
         sample_size: int = 100,
     ) -> list[Relationship]:
         # Populate collection cache

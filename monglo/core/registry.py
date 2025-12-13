@@ -30,10 +30,33 @@ class CollectionAdmin:
 
 class CollectionRegistry:
 
-    def __init__(self) -> None:
+    def __init__(self, database: AsyncIOMotorDatabase) -> None:
         self._collections: dict[str, CollectionAdmin] = {}
+        self._database = database
 
-    def register(self, admin: CollectionAdmin) -> None:
+    def register(self, name_or_admin, admin_class=None) -> None:
+        """
+        Register a collection admin
+        
+        Can be called as:
+            registry.register(admin)  # Pass CollectionAdmin instance
+            registry.register("users", UserAdmin)  # Pass name and ModelAdmin class
+        """
+        # Handle ModelAdmin class
+        if admin_class is not None:
+            # Import here to avoid circular imports
+            from .model_admin import ModelAdmin
+            
+            if isinstance(admin_class, type) and issubclass(admin_class, ModelAdmin):
+                # Instantiate the ModelAdmin and convert to CollectionAdmin
+                model_admin = admin_class(database=self._database, name=name_or_admin)
+                admin = model_admin.to_collection_admin()
+            else:
+                raise TypeError(f"admin_class must be a ModelAdmin subclass, got {type(admin_class)}")
+        else:
+            # Handle CollectionAdmin instance
+            admin = name_or_admin
+        
         if admin.name in self._collections:
             raise ValueError(f"Collection '{admin.name}' is already registered")
         self._collections[admin.name] = admin

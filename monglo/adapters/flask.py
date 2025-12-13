@@ -15,7 +15,7 @@ def create_flask_blueprint(
 ) -> Blueprint:
     bp = Blueprint(name, __name__, url_prefix=url_prefix)
     
-    # ==================== COLLECTIONS LIST ====================
+    # COLLECTIONS LIST
     
     @bp.route("/", methods=["GET"])
     async def list_collections():
@@ -32,7 +32,7 @@ def create_flask_blueprint(
         
         return jsonify({"collections": collections})
     
-    # ==================== COLLECTION ROUTES (Auto-generated for each) ====================
+    # COLLECTION ROUTES
     
     @bp.route("/<collection>", methods=["GET"])
     async def list_documents(collection: str):
@@ -140,7 +140,7 @@ def create_flask_blueprint(
         
         return jsonify({"success": True, "message": "Document deleted"})
     
-    # ==================== VIEW CONFIGURATION ROUTES ====================
+    # VIEW CONFIGURATION ROUTES
     
     @bp.route("/<collection>/config/table", methods=["GET"])
     async def get_table_config(collection: str):

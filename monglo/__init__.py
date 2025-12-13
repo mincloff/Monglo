@@ -15,6 +15,7 @@ from .core.engine import MongloEngine
 from .core.introspection import SchemaIntrospector
 from .core.query_builder import QueryBuilder
 from .core.registry import CollectionAdmin, CollectionRegistry
+from .core.model_admin import ModelAdmin
 from .core.relationships import (
     Relationship,
     RelationshipDetector,
@@ -72,6 +73,7 @@ __all__ = [
     # Registry
     "CollectionAdmin",
     "CollectionRegistry",
+    "ModelAdmin",
     # Utilities
     "SchemaIntrospector",
     "QueryBuilder",

@@ -15,7 +15,7 @@ def create_fastapi_router(
 ) -> APIRouter:
     router = APIRouter(prefix=prefix, tags=tags or ["Monglo Admin API"])
     
-    # ==================== COLLECTIONS LIST ====================
+    #COLLECTIONS LIST 
     
     @router.get("/", summary="List all collections")
     async def list_collections():
@@ -32,7 +32,7 @@ def create_fastapi_router(
         
         return {"collections": collections}
     
-    # ==================== COLLECTION ROUTES ====================
+    #COLLECTION ROUTES
     
     @router.get("/{collection}", summary="List documents")
     async def list_documents(
@@ -179,7 +179,7 @@ def create_fastapi_router(
         
         return {"success": True, "message": "Document deleted"}
     
-    # ==================== VIEW CONFIGURATION ROUTES ====================
+    # VIEW CONFIGURATION ROUTES 
     
     @router.get("/{collection}/config/table", summary="Get table view config")
     async def get_table_config(collection: str):

@@ -19,12 +19,12 @@ class MongloEngine:
         relationship_detection: Literal["auto", "manual", "off"] = "auto",
         excluded_collections: list[str] | None = None,
     ) -> None:
-        self.db = database
-        self._auto_discover = auto_discover
+        self.database = database
+        self.auto_discover = auto_discover
         self._relationship_detection = relationship_detection
         self._excluded_collections = set(excluded_collections or [])
 
-        self.registry = CollectionRegistry()
+        self.registry = CollectionRegistry(database=database)
         self.introspector = SchemaIntrospector(database)
         self.relationship_detector = RelationshipDetector(database)
 
@@ -34,8 +34,19 @@ class MongloEngine:
         if self._initialized:
             return
 
-        if self._auto_discover:
+        # Auto-discover collections if enabled
+        if self.auto_discover:
             await self._discover_collections()
+        
+        # ALWAYS detect relationships for ALL registered collections
+        # This ensures manually registered collections also get relationship detection
+        if self._relationship_detection in ["auto"]:
+            for name, admin in list(self.registry._collections.items()):
+                # Detect relationships for this collection
+                relationships = await self.relationship_detector.detect(name, admin.config)
+                # Update the admin's relationships
+                admin.relationships = relationships
+                print(f"✓ Detected {len(relationships)} relationships for {name}")
 
         self._initialized = True
 
@@ -62,7 +73,7 @@ class MongloEngine:
                 relationships = config.relationships
 
         collection_admin = CollectionAdmin(
-            name=name, database=self.db, config=config, relationships=relationships
+            name=name, database=self.database, config=config, relationships=relationships
         )
 
         self.registry.register(collection_admin)
@@ -74,7 +85,7 @@ class MongloEngine:
 
     async def _discover_collections(self) -> None:
 
-        collection_names = await self.db.list_collection_names()
+        collection_names = await self.database.list_collection_names()
 
         system_prefixes = ("system.",)
         collections_to_register = [

@@ -15,7 +15,7 @@ def create_starlette_routes(
     prefix: str = "/api/admin"
 ) -> list:
     
-    # ==================== COLLECTIONS LIST ====================
+    #COLLECTIONS LIST 
     
     async def list_collections(request):
         collections = []
@@ -31,7 +31,7 @@ def create_starlette_routes(
         
         return JSONResponse({"collections": collections})
     
-    # ==================== COLLECTION ROUTES ====================
+    # COLLECTION ROUTES
     
     async def list_documents(request):
         from ..operations.crud import CRUDOperations
@@ -145,7 +145,7 @@ def create_starlette_routes(
         
         return JSONResponse({"success": True, "message": "Document deleted"})
     
-    # ==================== VIEW CONFIGURATION ROUTES ====================
+    #VIEW CONFIGURATION ROUTES
     
     async def get_table_config(request):
         from ..views.table_view import TableView
@@ -182,7 +182,7 @@ def create_starlette_routes(
         
         return JSONResponse({"relationships": relationships})
     
-    # ==================== CREATE ROUTES ====================
+    # CREATE ROUTES
     
     routes = [
         Route(f"{prefix}/", list_collections, methods=["GET"]),

@@ -22,11 +22,17 @@ async def startup():
     
     #initialize monglo engine
     await engine.initialize()
-    #setup monglo ui
-    setup_ui(app, title="Test", engine=engine)
+    
+    #setup monglo ui with custom branding
+    setup_ui(
+        app, 
+        engine=engine,
+        title="My Custom App",  # Custom title
+    )
+    
     #setup monglo router
     app.include_router(create_fastapi_router(engine, prefix="/api"))
-    
+
 @app.on_event("shutdown")
 async def shutdown():
     client.close()

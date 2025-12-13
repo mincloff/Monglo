@@ -73,7 +73,7 @@ def create_ui_router(
                 "name": name,
                 "display_name": admin.display_name,
                 "count": count,
-                "relationships": len(admin.relationships)
+                "relationships": len(admin.relationships)  # Add relationship count
             })
         
         return templates.TemplateResponse("admin_home.html", {
@@ -81,6 +81,33 @@ def create_ui_router(
             "title": title,
             "logo": logo,
             "brand_color": brand_color,
+            "collections": collections,
+            "current_collection": None,
+            "prefix": prefix
+        })
+    
+    @router.get("/relationships", response_class=HTMLResponse, name="relationship_graph")
+    async def relationship_graph(request: Request):
+        """Display relationship graph visualization"""
+        # Collect all relationships across collections
+        all_relationships = []
+        for name, admin in engine.registry._collections.items():
+            for rel in admin.relationships:
+                all_relationships.append({
+                    "source_collection": name,
+                    "target_collection": rel.target_collection,
+                    "source_field": rel.source_field,
+                    "type": rel.type.value
+                })
+        
+        collections = await _get_all_collections(engine)
+        
+        return templates.TemplateResponse("relationship_graph.html", {
+            "request": request,
+            "title": title,
+            "logo": logo,
+            "brand_color": brand_color,
+            "relationships": all_relationships,
             "collections": collections,
             "current_collection": None,
             "prefix": prefix
@@ -334,6 +361,7 @@ async def _get_all_collections(engine: MongloEngine) -> list[dict[str, Any]]:
         collections.append({
             "name": name,
             "display_name": admin.display_name,
-            "count": count
+            "count": count,
+            "relationships": len(admin.relationships)  # Include relationship count
         })
     return collections
