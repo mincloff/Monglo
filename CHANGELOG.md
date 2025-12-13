@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit logging system
 - Data migration tools
 
+## [0.1.1] - 2025-12-14
+
+### Fixed
+- **Critical**: Fixed missing `monglo_ui` package in wheel distribution
+  - Added `monglo_ui` to `packages` list in `pyproject.toml`
+  - Package now correctly includes all UI templates and static files
+
 ## [0.1.0] - 2025-12-13
 
 **First production-ready release with full FastAPI support!** 🎉

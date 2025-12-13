@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "Monglo"
-version = "0.1.0"
+version = "0.1.1"
 description = "A framework-agnostic MongoDB admin library with intelligent relationship detection and dual views"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -98,7 +98,7 @@ Issues = "https://github.com/me-umar/monglo/issues"
 Changelog = "https://github.com/me-umar/monglo/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["monglo"]
+packages = ["monglo", "monglo_ui"]
 
 [tool.hatch.build.targets.sdist]
 include = [
