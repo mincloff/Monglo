@@ -133,3 +133,9 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+
+[tool.semantic_release]
+version_variable = "monglo/__init__.py:__version__"
+branch = "main"
+upload_to_release = true
+build_command = "pip install build && python -m build"
