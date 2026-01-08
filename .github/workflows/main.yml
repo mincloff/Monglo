@@ -50,7 +50,7 @@ jobs:
         shell: bash
 
       - name: Run Tests
-        run: pytest
+        run: pytest --import-mode=importlib tests/
         shell: bash
 
   release:
