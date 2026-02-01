@@ -55,7 +55,14 @@ jobs:
         shell: bash
 
       - name: Run Tests
-        run: pytest --import-mode=importlib tests/
+        env:
+          MONGODB_URL: mongodb://localhost:27017
+        # We add --asyncio-mode=auto and force a single loop
+        run: |
+          pytest --import-mode=importlib \
+                 --asyncio-mode=auto \
+                 -o "asyncio_default_fixture_loop_scope=session" \
+                 tests/
         shell: bash
 
   release:
